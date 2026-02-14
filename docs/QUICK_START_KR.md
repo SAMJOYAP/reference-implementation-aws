@@ -62,7 +62,7 @@ open "https://github.com/organizations/$GH_ORG/settings/apps/new"
 1. Name: `$GH_ORG-backstage`
 2. Homepage URL: `https://$DOMAIN`
 3. Callback URL: `https://$DOMAIN/api/auth/github/handler/frame`
-4. Webhook: Uncheck
+4. Webhook: Uncheck (필수!)
 5. Permissions: Administration (Read/Write), Contents (Read/Write), Members (Read), Organization Admin (Read)
 6. Create → Generate Private Key → Install App
 
@@ -75,6 +75,8 @@ cp private/argocd-github.yaml.template private/argocd-github.yaml
 
 # 편집 (App ID, Client ID, Client Secret, Private Key, Installation ID 입력)
 vi private/backstage-github.yaml
+# ⚠️ 중요: webhookSecret: "dummy-webhook-secret-not-used" 사용 (빈 문자열 사용 시 실패!)
+
 vi private/argocd-github.yaml
 ```
 

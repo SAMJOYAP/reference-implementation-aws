@@ -255,7 +255,14 @@ git remote -v
    - **GitHub App name**: `YOUR_ORG-backstage`
    - **Homepage URL**: `https://backstage.your-domain.com`
    - **Callback URL**: `https://backstage.your-domain.com/api/auth/github/handler/frame`
-   - **Webhook → Active**: ❌ Uncheck
+   - **Webhook → Active**: ❌ Uncheck (반드시 체크 해제!)
+
+   > **💡 왜 Webhook을 비활성화하나요?**
+   >
+   > - Webhook을 활성화하면 GitHub가 이벤트를 Backstage로 실시간 전송합니다
+   > - 하지만 외부에서 접근 가능한 URL과 추가 보안 설정이 필요합니다
+   > - 비활성화해도 Backstage는 polling 방식으로 GitHub을 주기적으로 확인하여 정상 작동합니다
+   > - 간단한 설정을 위해 Webhook 비활성화를 권장합니다
 
 3. **Permissions 설정**
 
@@ -328,12 +335,19 @@ appId: 2858537  # Your App ID
 webhookUrl: https://backstage.your-domain.com
 clientId: Iv23liXXXXXXXXXXXX  # Your Client ID
 clientSecret: 7d96e56c52d608bd669a628c1f1873b871122960  # Your Client Secret
-webhookSecret: ""
+webhookSecret: "dummy-webhook-secret-not-used"  # ⚠️ 반드시 이 값 사용! (빈 문자열 사용 시 pod 실패)
 privateKey: |
   -----BEGIN RSA PRIVATE KEY-----
   [다운로드한 .pem 파일의 내용을 여기에 붙여넣기]
   -----END RSA PRIVATE KEY-----
 ```
+
+> **⚠️ 중요: webhookSecret 값**
+>
+> - **반드시** `"dummy-webhook-secret-not-used"` 문자열을 사용하세요
+> - GitHub App에서 Webhook을 비활성화했더라도 이 값은 필수입니다
+> - 빈 문자열(`""`)을 사용하면 Backstage pod이 CrashLoopBackOff로 실패합니다
+> - Backstage 설정 검증 로직에서 이 필드를 필수로 체크하기 때문입니다
 
 **private/argocd-github.yaml 편집:**
 ```yaml
