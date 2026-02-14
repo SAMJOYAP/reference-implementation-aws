@@ -1,8 +1,8 @@
-appId: 1234
-webhookUrl: https://...
-clientId: ABC..
-clientSecret: 1234abc
-webhookSecret: 123abc
+appId: 1234  # GitHub App ID
+webhookUrl: https://...  # Your domain
+clientId: ABC..  # GitHub App Client ID
+clientSecret: 1234abc  # GitHub App Client Secret
+webhookSecret: "dummy-webhook-secret-not-used"  # Use this exact value (even if webhook is disabled)
 privateKey: |
   -----BEGIN RSA PRIVATE KEY-----
   ...

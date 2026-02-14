@@ -9,9 +9,12 @@ This project contains an Internal Developer Platform (IDP) reference implementat
 
 | Language | Guide Type | Link |
 |----------|-----------|------|
-| 🇰🇷 한국어 | 전체 설치 가이드 | [SETUP_GUIDE_KR.md](docs/SETUP_GUIDE_KR.md) |
-| 🇰🇷 한국어 | 빠른 시작 | [QUICK_START_KR.md](docs/QUICK_START_KR.md) |
+| 🇰🇷 한국어 | **완벽 설치 가이드** (권장) | [설치_가이드.md](docs/설치_가이드.md) |
+| 🇰🇷 한국어 | 트러블슈팅 | [트러블슈팅.md](docs/트러블슈팅.md) |
+| 🇰🇷 한국어 | 빠른 시작 (경험자용) | [INSTALLATION.md](INSTALLATION.md) |
 | 🇺🇸 English | Full Guide | [Getting Started](#getting-started) |
+
+> **🎯 처음 사용자**: [한글 완벽 설치 가이드](docs/설치_가이드.md)를 따라하시면 한 번에 성공적으로 설치할 수 있습니다.
 
 ## Architecture Overview
 
@@ -287,7 +290,7 @@ kubectl get secret -n keycloak keycloak-config -o jsonpath='{.data.USER1_PASSWOR
 ```
 
 Once all the Argo CD apps on the EKS cluster are reporting healthy status, try out the [examples](examples/) to create a new application through Backstage.
-For troubleshooting, refer to the [troubleshooting guide](docs/troubleshooting.md).
+For troubleshooting, refer to the [troubleshooting guide](docs/트러블슈팅.md) ([Korean](docs/트러블슈팅.md)).
 
 ## Cleanup
 > [!WARNING]
