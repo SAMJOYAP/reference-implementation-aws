@@ -5,6 +5,14 @@ This project contains an Internal Developer Platform (IDP) reference implementat
 > [!NOTE]
 > Applications deployed in this repository are a starting point to get environment into production.
 
+## 📚 Documentation
+
+| Language | Guide Type | Link |
+|----------|-----------|------|
+| 🇰🇷 한국어 | 전체 설치 가이드 | [SETUP_GUIDE_KR.md](docs/SETUP_GUIDE_KR.md) |
+| 🇰🇷 한국어 | 빠른 시작 | [QUICK_START_KR.md](docs/QUICK_START_KR.md) |
+| 🇺🇸 English | Full Guide | [Getting Started](#getting-started) |
+
 ## Architecture Overview
 
 ![overview](docs/images/overview.png)
