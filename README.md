@@ -47,52 +47,246 @@ Helm 차트로 구성되며, 정적 값은 `packages/<addon-name>/values.yaml`�
 
 설치 흐름에 대한 자세한 내용은 [installation flow](docs/installation_flow.md)를 확인하세요.
 
-### 🚀 빠른 시작
+### 📊 설치 흐름도
 
-#### 사전 요구사항
-- AWS 계정 및 IAM 자격 증명
-- GitHub Organization
-- Route53 Hosted Zone
-- 로컬 도구: AWS CLI, kubectl, eksctl, helm, yq
+다음 다이어그램은 CNOE AWS Reference Implementation의 상위 수준 설치 흐름을 보여줍니다. 로컬 환경이 AWS 리소스와 상호작용하여 EKS 클러스터에 플랫폼을 배포하고 구성하는 방법을 나타냅니다.
 
-#### 설치 단계
+```mermaid
+flowchart TD
+    subgraph "로컬 환경"
+        config["config.yaml"]
+        secrets["GitHub App 자격 증명
+        (private/*.yaml)"]
+        create_secrets["create-config-secrets.sh"]
+        install["install.sh"]
+        helm["helm"]
+    end
 
-1. **Repository Fork**
-   ```bash
-   gh repo fork cnoe-io/reference-implementation-aws --clone=true
-   cd reference-implementation-aws
-   ```
+    subgraph "AWS"
+        aws_secrets["AWS Secrets Manager
+        - cnoe-ref-impl/config
+        - cnoe-ref-impl/github-app"]
 
-2. **GitHub Apps 생성**
-   - Backstage용 GitHub App
-   - Argo CD용 GitHub App
-   - 자격 증명을 `private/*.yaml`에 저장
+        subgraph "EKS 클러스터"
+            eks_argocd["Argo CD"]
+            eso["External Secret Operator"]
+            appset["addons-appset
+            (ApplicationSet)"]
 
-3. **설정 파일 작성**
-   ```bash
-   # config.yaml 편집
-   vi config.yaml
+            subgraph "애드온"
+                backstage["Backstage"]
+                keycloak["Keycloak"]
+                crossplane["Crossplane"]
+                cert_manager["Cert Manager"]
+                external_dns["External DNS"]
+                ingress["Ingress NGINX"]
+                argo_workflows["Argo Workflows"]
+            end
+        end
+    end
 
-   # AWS Secrets Manager에 저장
-   ./scripts/create-config-secrets.sh
-   ```
+    config --> create_secrets
+    secrets --> create_secrets
+    create_secrets --> aws_secrets
 
-4. **EKS 클러스터 생성**
-   ```bash
-   ./scripts/create-cluster.sh
-   ```
+    config --> install
+    install --> helm
 
-5. **플랫폼 설치**
-   ```bash
-   ./scripts/install.sh
-   ```
+    helm -- "설치" --> eks_argocd
+    helm -- "설치" --> eso
+    helm -- "생성" --> appset
 
-6. **접속**
-   - Backstage: `https://your-domain.com`
-   - Argo CD: `https://your-domain.com/argocd`
-   - Argo Workflows: `https://your-domain.com/argo-workflows`
+    aws_secrets -- "설정 제공" --> eso
 
-> **상세 가이드**: [완벽 설치 가이드](docs/설치_가이드.md)를 참고하세요.
+    appset -- "Argo CD 애드온 ApplicationSets 생성" --> 애드온
+
+    eks_argocd -- "관리" --> 애드온
+    eso -- "시크릿 제공" --> 애드온
+
+    classDef aws fill:#FF9900,stroke:#232F3E,color:white;
+    classDef k8s fill:#326CE5,stroke:#254AA5,color:white;
+    classDef tools fill:#4CAF50,stroke:#388E3C,color:white;
+    classDef config fill:#9C27B0,stroke:#7B1FA2,color:white;
+
+    class aws_secrets,EKS aws;
+    class eks_argocd,eso,appset,backstage,keycloak,crossplane,cert_manager,external_dns,ingress,argo_workflows k8s;
+    class helm,install,create_secrets tools;
+    class config,secrets config;
+```
+
+### 🚀 시작하기
+
+> **📖 전체 가이드**: 처음 설치하시는 분은 [완벽 설치 가이드](docs/설치_가이드.md)를 반드시 읽어보세요!
+> 아래는 경험자를 위한 빠른 요약입니다.
+
+#### 1단계. ⚙️ 환경 준비
+
+**필수 바이너리 설치:**
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [yq](https://mikefarah.gitbook.io/yq/v3.x)
+- [helm](https://helm.sh/docs/intro/install/)
+- [eksctl](https://eksctl.io/installation/)
+
+**AWS 자격 증명 설정:**
+```bash
+aws configure --profile your-project-name
+```
+
+#### 2단계. 🏢 GitHub Organization 생성
+
+GitHub Organization을 생성합니다 (무료):
+- https://github.com/account/organizations/new
+
+> [!NOTE]
+> Backstage는 개인 계정 GitHub Apps에 [제약사항](https://backstage.io/docs/integrations/github/github-apps/#caveats)이 있으므로 Organization 사용을 권장합니다.
+
+#### 3단계. 🍴 Repository Fork
+
+생성한 Organization으로 이 저장소를 Fork합니다:
+```bash
+gh repo fork cnoe-io/reference-implementation-aws --org YOUR-ORG --clone=true
+cd reference-implementation-aws
+```
+
+#### 4단계. 💻 GitHub Apps 생성
+
+**Backstage용 GitHub App:**
+- 이름: `YOUR-ORG-backstage`
+- Homepage URL: `https://your-domain.com`
+- Callback URL: `https://your-domain.com/api/auth/github/handler/frame`
+- **Webhook: ☐ Active (체크 해제 필수!)**
+- 권한: Administration (Read/Write), Contents (Read/Write), Members (Read), Metadata (Read)
+
+**Argo CD용 GitHub App:**
+- 이름: `YOUR-ORG-argocd`
+- Homepage URL: `https://your-domain.com/argocd`
+- **Webhook: ☐ Active (체크 해제 필수!)**
+- 권한: Contents (Read), Metadata (Read)
+
+**자격 증명 저장:**
+```bash
+cp private/argocd-github.yaml.template private/argocd-github.yaml
+cp private/backstage-github.yaml.template private/backstage-github.yaml
+
+# 파일 편집하여 GitHub App 정보 입력
+vi private/backstage-github.yaml
+vi private/argocd-github.yaml
+```
+
+> [!WARNING]
+> **중요**: `private/backstage-github.yaml`에서 `webhookSecret: "dummy-webhook-secret-not-used"` 값을 사용하세요!
+> 빈 문자열(`""`)을 사용하면 Backstage pod이 CrashLoopBackOff로 실패합니다.
+
+#### 5단계. ⚙️ 설정 파일 작성
+
+**config.yaml 편집:**
+```yaml
+repo:
+  url: "https://github.com/YOUR-ORG/reference-implementation-aws"
+  revision: "main"
+  basepath: "packages"
+
+cluster_name: "your-cluster-name"
+auto_mode: "false"
+region: "ap-northeast-2"
+
+domain: your-domain.com
+route53_hosted_zone_id: Z0XXXXXXXXX
+
+path_routing: "true"
+
+tags:
+  githubRepo: "github.com/YOUR-ORG/reference-implementation-aws"
+  env: "dev"
+  project: "your-project"
+```
+
+**ClusterSecretStore 리전 설정:**
+```bash
+sed -i.bak "s/us-west-2/ap-northeast-2/g" \
+  packages/external-secrets/manifests/cluster-secret-store.yaml
+```
+
+#### 6단계. 🔒 AWS Secrets Manager에 시크릿 생성
+
+```bash
+./scripts/create-config-secrets.sh
+```
+
+이 명령어는 두 개의 시크릿을 생성합니다:
+1. **cnoe-ref-impl/config**: `config.yaml`의 내용
+2. **cnoe-ref-impl/github-app**: GitHub Apps 자격 증명
+
+#### 7단계. ☸️ EKS 클러스터 생성
+
+```bash
+./scripts/create-cluster.sh
+# eksctl 또는 terraform 선택
+```
+
+생성되는 리소스:
+- EKS 클러스터 (Auto Mode 또는 Managed Node Group 4 nodes)
+- VPC, Subnets, Security Groups
+- IAM Roles 및 Pod Identity Associations
+
+> [!NOTE]
+> 기존 EKS 클러스터를 사용하려면 위의 리소스들이 사전에 구성되어 있어야 합니다.
+
+#### 8단계. 🚀 플랫폼 배포
+
+```bash
+./scripts/install.sh
+```
+
+설치 과정:
+1. Argo CD를 Helm 차트로 설치
+2. External Secret Operator 설치
+3. Addons ApplicationSet 생성
+4. 모든 애드온 자동 배포 및 관리
+
+**설치 모니터링:**
+```bash
+# 터미널 1: Applications 상태
+kubectl get applications -n argocd --watch
+
+# 터미널 2: Argo CD UI (Port Forward)
+kubectl get secrets -n argocd argocd-initial-admin-secret \
+  -oyaml | yq '.data.password' | base64 -d && echo
+kubectl port-forward -n argocd svc/argocd-server 8080:80
+# http://localhost:8080/argocd 접속
+```
+
+#### 9단계. 🌐 플랫폼 접속
+
+**URL 확인:**
+```bash
+./scripts/get-urls.sh
+```
+
+**Path Routing 사용 시** (`path_routing: "true"`):
+- Backstage: `https://[domain]`
+- Argo CD: `https://[domain]/argocd`
+- Argo Workflows: `https://[domain]/argo-workflows`
+
+**로그인 정보:**
+```bash
+# Argo CD
+echo "Username: admin"
+kubectl get secrets -n argocd argocd-initial-admin-secret \
+  -oyaml | yq '.data.password' | base64 -d && echo
+
+# Keycloak SSO (Backstage, Argo Workflows)
+echo "Username: user1"
+kubectl get secret -n keycloak keycloak-config \
+  -o jsonpath='{.data.USER1_PASSWORD}' | base64 -d && echo
+```
+
+**Backstage에서 첫 애플리케이션 생성:**
+
+설치가 완료되면 [examples](examples/)를 참고하여 Backstage를 통해 새 애플리케이션을 생성해보세요.
+
+> **💡 Tip**: 모든 Argo CD 앱이 Healthy 상태가 될 때까지 기다립니다 (약 10-15분).
 
 ### 🆘 문제 해결
 
