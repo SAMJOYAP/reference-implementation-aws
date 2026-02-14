@@ -1,45 +1,169 @@
 # AWS Reference Implementation
 
-This project contains an Internal Developer Platform (IDP) reference implementation for AWS. This project can bring up an IDP on EKS with all the tools configured and ready to use in production. It will install addons on an EKS cluster as Argo CD apps using GitOps Bridge App of ApplicationSets pattern. Check out the [Getting Started](#getting-started) guide for installing this solution on an EKS cluster.
+[🇰🇷 한국어](#한국어) | [🇺🇸 English](#english)
+
+---
+
+## 한국어
+
+### 🎯 프로젝트 개요
+
+AWS용 Internal Developer Platform (IDP) 레퍼런스 구현입니다. 이 프로젝트는 프로덕션에서 바로 사용 가능한 모든 도구가 설정된 IDP를 EKS에 구축합니다. GitOps Bridge App of ApplicationSets 패턴을 사용하여 Argo CD 앱으로 애드온을 설치합니다.
+
+> [!NOTE]
+> 이 저장소의 애플리케이션들은 프로덕션 환경을 구축하기 위한 시작점입니다.
+
+### 📚 문서
+
+| 문서 종류 | 설명 | 링크 |
+|----------|------|------|
+| **완벽 설치 가이드** (권장) | 처음 사용자를 위한 상세 가이드 | [📖 설치_가이드.md](docs/설치_가이드.md) |
+| **트러블슈팅** | 실제 경험 기반 문제 해결 | [🔧 트러블슈팅.md](docs/트러블슈팅.md) |
+| **빠른 시작** | 경험자를 위한 빠른 가이드 | [⚡ INSTALLATION.md](INSTALLATION.md) |
+| 전체 설정 가이드 | 상세 설정 및 옵션 | [📋 SETUP_GUIDE_KR.md](docs/SETUP_GUIDE_KR.md) |
+| 빠른 체크리스트 | 5분 체크리스트 | [✅ QUICK_START_KR.md](docs/QUICK_START_KR.md) |
+
+> **🎯 처음 시작하시나요?** [한글 완벽 설치 가이드](docs/설치_가이드.md)를 따라하시면 한 번에 성공적으로 설치할 수 있습니다.
+
+### 🏗️ 아키텍처 개요
+
+![overview](docs/images/overview.png)
+
+### 📦 포함된 애드온
+
+Helm 차트로 구성되며, 정적 값은 `packages/<addon-name>/values.yaml`에, 동적 값은 Argo CD 클러스터 시크릿 레이블/어노테이션 기반으로 `packages/addons/values.yaml`에 설정됩니다.
+
+| 이름 | 네임스페이스 | 용도 | 차트 버전 | 차트 |
+| ---------- | ---------- | ---------- | ---------- | ---------- |
+| Argo CD | argocd | 애드온 Argo CD 애플리케이션 설치 및 관리 | 8.0.14 | [Link](https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd) |
+| Argo Workflows | argo | 지속적 통합 작업을 위한 워크플로우 도구 | 0.45.18 | [Link](https://github.com/argoproj/argo-helm/tree/main/charts/argo-workflows) |
+| Backstage | backstage | 개발자 포털 (셀프서비스 웹 UI) | 2.6.0 | [Link](https://github.com/backstage/charts/tree/main/charts/backstage) |
+| Cert Manager | cert-manager | Let's Encrypt를 사용한 인증서 관리 | 1.17.2 | [Link](https://cert-manager.io/docs/installation/helm/) |
+| Crossplane | crossplane-system | 인프라 프로비저닝을 위한 IaC 컨트롤러 | 1.20.0 | [Link](https://github.com/crossplane/crossplane/tree/main/cluster/charts/crossplane) |
+| External DNS | external-dns | Route 53을 사용한 도메인 관리 | 1.16.1 | [Link](https://github.com/kubernetes-sigs/external-dns/tree/master/charts/external-dns) |
+| External Secrets | external-secrets | AWS Secret Manager 및 Parameter Store를 사용한 시크릿 관리 | 0.17.0 | [Link](https://github.com/external-secrets/external-secrets/tree/main/deploy/charts/external-secrets) |
+| Ingress NGINX | ingress-nginx | L7 네트워크 트래픽 라우팅을 위한 Ingress 컨트롤러 | 4.7.0 | [Link](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx) |
+| Keycloak | keycloak | 사용자 인증을 위한 Identity Provider | 24.7.3 | [Link](https://github.com/bitnami/charts/tree/main/bitnami/keycloak) |
+
+설치 흐름에 대한 자세한 내용은 [installation flow](docs/installation_flow.md)를 확인하세요.
+
+### 🚀 빠른 시작
+
+#### 사전 요구사항
+- AWS 계정 및 IAM 자격 증명
+- GitHub Organization
+- Route53 Hosted Zone
+- 로컬 도구: AWS CLI, kubectl, eksctl, helm, yq
+
+#### 설치 단계
+
+1. **Repository Fork**
+   ```bash
+   gh repo fork cnoe-io/reference-implementation-aws --clone=true
+   cd reference-implementation-aws
+   ```
+
+2. **GitHub Apps 생성**
+   - Backstage용 GitHub App
+   - Argo CD용 GitHub App
+   - 자격 증명을 `private/*.yaml`에 저장
+
+3. **설정 파일 작성**
+   ```bash
+   # config.yaml 편집
+   vi config.yaml
+
+   # AWS Secrets Manager에 저장
+   ./scripts/create-config-secrets.sh
+   ```
+
+4. **EKS 클러스터 생성**
+   ```bash
+   ./scripts/create-cluster.sh
+   ```
+
+5. **플랫폼 설치**
+   ```bash
+   ./scripts/install.sh
+   ```
+
+6. **접속**
+   - Backstage: `https://your-domain.com`
+   - Argo CD: `https://your-domain.com/argocd`
+   - Argo Workflows: `https://your-domain.com/argo-workflows`
+
+> **상세 가이드**: [완벽 설치 가이드](docs/설치_가이드.md)를 참고하세요.
+
+### 🆘 문제 해결
+
+문제가 발생하면 [트러블슈팅 가이드](docs/트러블슈팅.md)를 확인하세요.
+
+자주 발생하는 문제:
+- ✅ Backstage `webhookSecret` CrashLoopBackOff
+- ✅ ClusterSecretStore 리전 불일치
+- ✅ Keycloak/PostgreSQL 이미지 문제 (bitnami → bitnamilegacy)
+- ✅ Certificate 발급 실패
+- ✅ DNS 전파 문제
+
+### 🧹 정리
+
+```bash
+# 애드온 제거
+./scripts/uninstall.sh
+
+# CRDs 제거
+./scripts/cleanup-crds.sh
+
+# EKS 클러스터 삭제
+eksctl delete cluster --name YOUR-CLUSTER-NAME --region YOUR-REGION
+```
+
+---
+
+## English
+
+### 🎯 Project Overview
+
+This project contains an Internal Developer Platform (IDP) reference implementation for AWS. This project can bring up an IDP on EKS with all the tools configured and ready to use in production. It will install addons on an EKS cluster as Argo CD apps using GitOps Bridge App of ApplicationSets pattern.
 
 > [!NOTE]
 > Applications deployed in this repository are a starting point to get environment into production.
 
-## 📚 Documentation
+### 📚 Documentation
 
 | Language | Guide Type | Link |
 |----------|-----------|------|
-| 🇰🇷 한국어 | **완벽 설치 가이드** (권장) | [설치_가이드.md](docs/설치_가이드.md) |
-| 🇰🇷 한국어 | 트러블슈팅 | [트러블슈팅.md](docs/트러블슈팅.md) |
-| 🇰🇷 한국어 | 빠른 시작 (경험자용) | [INSTALLATION.md](INSTALLATION.md) |
-| 🇺🇸 English | Full Guide | [Getting Started](#getting-started) |
+| 🇰🇷 Korean | **Complete Installation Guide** (Recommended) | [설치_가이드.md](docs/설치_가이드.md) |
+| 🇰🇷 Korean | Troubleshooting | [트러블슈팅.md](docs/트러블슈팅.md) |
+| 🇰🇷 Korean | Quick Start | [INSTALLATION.md](INSTALLATION.md) |
+| 🇺🇸 English | Full Guide | [Getting Started](#getting-started-english) |
 
-> **🎯 처음 사용자**: [한글 완벽 설치 가이드](docs/설치_가이드.md)를 따라하시면 한 번에 성공적으로 설치할 수 있습니다.
+> **🎯 New Users**: Follow the [Complete Installation Guide](docs/설치_가이드.md) for a successful first-time installation.
 
-## Architecture Overview
+### 🏗️ Architecture Overview
 
 ![overview](docs/images/overview.png)
 
-## Addons
+### 📦 Addons
 
 All the addons are helm charts with static values configured in `packages/<addon-name>/values.yaml` and dynamic values based on Argo CD cluster secret label/annotations values in `packages/addons/values.yaml`.
 
 | Name | Namespace | Purpose | Chart Version | Chart |
 | ---------- | ---------- | ---------- | ---------- | ---------- |
 | Argo CD | argocd | Installation and management of addon Argo CD application | 8.0.14 | [Link](https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd) |
-| Argo Workflows | argo | Workflow tool for continuous integration tasks  | 0.45.18 | [Link](https://github.com/argoproj/argo-helm/tree/main/charts/argo-workflows )|
+| Argo Workflows | argo | Workflow tool for continuous integration tasks  | 0.45.18 | [Link](https://github.com/argoproj/argo-helm/tree/main/charts/argo-workflows) |
 | Backstage | backstage | Self-Service Web UI (Developer Portal) for developers | 2.6.0 | [Link](https://github.com/backstage/charts/tree/main/charts/backstage) |
 | Cert Manager | cert-manager | Certificate manager for addons and developer applications using Let's Encrypt | 1.17.2 | [Link](https://cert-manager.io/docs/installation/helm/) |
 | Crossplane | crossplane-system | IaC controller for provisioning infrastructure  | 1.20.0 | [Link](https://github.com/crossplane/crossplane/tree/main/cluster/charts/crossplane) |
 | ACK | ack-system | IaC controller for provisioning infrastructure  | TBD | Coming soon check [#54](https://github.com/cnoe-io/reference-implementation-aws/issues/54) |
 | External DNS | external-dns | Domain management using Route 53 | 1.16.1 | [Link](https://github.com/kubernetes-sigs/external-dns/tree/master/charts/external-dns) |
-| External Secrets | external-secrets | Secret Management using AWS Secret Manager and AWS Systems Manager Parameter Store  | Version | [Link](https://github.com/external-secrets/external-secrets/tree/main/deploy/charts/external-secrets) |
+| External Secrets | external-secrets | Secret Management using AWS Secret Manager and AWS Systems Manager Parameter Store | 0.17.0 | [Link](https://github.com/external-secrets/external-secrets/tree/main/deploy/charts/external-secrets) |
 | Ingress NGINX | ingress-nginx | Ingress controller for L7 network traffic routing  | 4.7.0 | [Link](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx) |
 | Keycloak | keycloak | Identity provider for User Authentication | 24.7.3 | [Link](https://github.com/bitnami/charts/tree/main/bitnami/keycloak) |
 
 Check out more details about the [installation flow](docs/installation_flow.md).
 
-## Installation Flow Diagram
+### 📊 Installation Flow Diagram
 This diagram illustrates the high-level installation flow for the CNOE AWS Reference Implementation. It shows how the local environment interacts with AWS resources to deploy and configure the platform on an EKS cluster.
 
 ```mermaid
@@ -105,7 +229,7 @@ flowchart TD
     class config,secrets config;
 ```
 
-## Getting Started
+## Getting Started (English)
 
 ### Step 1. ⚙️ Prepare Environment for Installation
 
@@ -290,7 +414,19 @@ kubectl get secret -n keycloak keycloak-config -o jsonpath='{.data.USER1_PASSWOR
 ```
 
 Once all the Argo CD apps on the EKS cluster are reporting healthy status, try out the [examples](examples/) to create a new application through Backstage.
-For troubleshooting, refer to the [troubleshooting guide](docs/트러블슈팅.md) ([Korean](docs/트러블슈팅.md)).
+
+For troubleshooting, refer to the [troubleshooting guide](docs/트러블슈팅.md).
+
+### 🆘 Troubleshooting
+
+Common issues and solutions:
+- ✅ Backstage `webhookSecret` CrashLoopBackOff
+- ✅ ClusterSecretStore region mismatch
+- ✅ Keycloak/PostgreSQL image issues (bitnami → bitnamilegacy)
+- ✅ Certificate issuance failures
+- ✅ DNS propagation issues
+
+See the full [troubleshooting guide](docs/트러블슈팅.md) for detailed solutions.
 
 ## Cleanup
 > [!WARNING]
