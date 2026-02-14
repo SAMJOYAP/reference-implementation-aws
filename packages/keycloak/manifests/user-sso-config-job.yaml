@@ -322,7 +322,8 @@ spec:
               fi
 
               # Download kubectl
-              curl -sS -LO "https://dl.k8s.io/release/v1.28.3//bin/linux/amd64/kubectl"
+              KUBECTL_VERSION=$(curl -sS -L https://dl.k8s.io/release/stable.txt)
+              curl -sS -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
               chmod +x kubectl
               
               echo "creating client scopes"
