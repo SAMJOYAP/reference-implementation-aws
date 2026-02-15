@@ -18,12 +18,15 @@ AWS용 Internal Developer Platform (IDP) 레퍼런스 구현입니다. 이 프�
 | 문서 종류 | 설명 | 링크 |
 |----------|------|------|
 | **완벽 설치 가이드** (권장) | 처음 사용자를 위한 상세 가이드 | [📖 설치_가이드.md](docs/설치_가이드.md) |
+| **Fork 체크리스트** | Repository Fork 후 설정 항목 | [🍴 Fork_체크리스트.md](docs/Fork_체크리스트.md) |
 | **트러블슈팅** | 실제 경험 기반 문제 해결 | [🔧 트러블슈팅.md](docs/트러블슈팅.md) |
 | **빠른 시작** | 경험자를 위한 빠른 가이드 | [⚡ INSTALLATION.md](INSTALLATION.md) |
 | 전체 설정 가이드 | 상세 설정 및 옵션 | [📋 SETUP_GUIDE_KR.md](docs/SETUP_GUIDE_KR.md) |
 | 빠른 체크리스트 | 5분 체크리스트 | [✅ QUICK_START_KR.md](docs/QUICK_START_KR.md) |
 
 > **🎯 처음 시작하시나요?** [한글 완벽 설치 가이드](docs/설치_가이드.md)를 따라하시면 한 번에 성공적으로 설치할 수 있습니다.
+>
+> **🍴 Repository를 Fork하셨나요?** [Fork 체크리스트](docs/Fork_체크리스트.md)에서 설정해야 할 항목을 확인하세요.
 
 ### 🏗️ 아키텍처 개요
 
@@ -328,11 +331,14 @@ This project contains an Internal Developer Platform (IDP) reference implementat
 | Language | Guide Type | Link |
 |----------|-----------|------|
 | 🇰🇷 Korean | **Complete Installation Guide** (Recommended) | [설치_가이드.md](docs/설치_가이드.md) |
+| 🇰🇷 Korean | Fork Checklist | [Fork_체크리스트.md](docs/Fork_체크리스트.md) |
 | 🇰🇷 Korean | Troubleshooting | [트러블슈팅.md](docs/트러블슈팅.md) |
 | 🇰🇷 Korean | Quick Start | [INSTALLATION.md](INSTALLATION.md) |
 | 🇺🇸 English | Full Guide | [Getting Started](#getting-started-english) |
 
 > **🎯 New Users**: Follow the [Complete Installation Guide](docs/설치_가이드.md) for a successful first-time installation.
+>
+> **🍴 Forked this repository?** Check the [Fork Checklist](docs/Fork_체크리스트.md) for required configuration steps.
 
 ### 🏗️ Architecture Overview
 
