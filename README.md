@@ -31,6 +31,7 @@ AWS용 Internal Developer Platform (IDP) 레퍼런스 구현입니다. 이 프�
 | 문서 종류 | 설명 | 링크 |
 |----------|------|------|
 | **Backstage 사용 가이드** (필독) | Component 개념, 구조, 외부 Component 추가 | [🎨 Backstage_사용_가이드.md](docs/Backstage_사용_가이드.md) |
+| **Backstage Catalog 동작원리** (필독) | Catalog 등록 방법, 외부 템플릿 추가, 적용 과정 | [⚙️ Backstage_Catalog_동작원리.md](docs/Backstage_Catalog_동작원리.md) |
 | **Terraform 템플릿 사용법** | AWS 리소스 Vending Machine 활용 | [🏗️ Terraform_템플릿_사용법.md](docs/Terraform_템플릿_사용법.md) |
 
 > **🎯 처음 시작하시나요?** [한글 완벽 설치 가이드](docs/설치_가이드.md)를 따라하시면 한 번에 성공적으로 설치할 수 있습니다.
