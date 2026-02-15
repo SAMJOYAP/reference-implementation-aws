@@ -20,10 +20,13 @@ spec:
         repoUrl:
           title: Repository Location
           type: string
+          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account. GitHub Apps only work with Organizations.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
               - github.com
+            allowedOwners:
+              - SAMJOYAP  # Update this to your GitHub Organization name after forking
 
   steps:
     - id: create-repo

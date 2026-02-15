@@ -113,6 +113,33 @@ aws configure --profile your-project-name
 
 ---
 
+### 5. Backstage 템플릿 Organization (필수)
+
+**파일들**: `templates/backstage/*/template.yaml`
+
+**현재 값:**
+```yaml
+allowedOwners:
+  - SAMJOYAP  # ← 당신의 GitHub Organization 이름으로 변경
+```
+
+**변경 방법:**
+```bash
+# 모든 템플릿에서 Organization 이름 변경
+find templates/backstage -name "template.yaml" -exec \
+  sed -i.bak "s/SAMJOYAP/YOUR-ORG/g" {} \;
+```
+
+**왜 필요한가?**
+- ✅ GitHub Apps는 **Organization에만 설치됨**
+- ❌ 개인 계정 사용 시 "No token available" 에러 발생
+- ✅ Organization 사용 시 GitHub Apps로 자동 인증
+
+**변경 필요:**
+- ✅ `allowedOwners`: 당신의 GitHub Organization 이름
+
+---
+
 ## 🚫 변경하지 않아도 되는 것들
 
 ### packages/ 디렉토리
@@ -125,9 +152,6 @@ aws configure --profile your-project-name
 - ✅ `create-config-secrets.sh` - 그대로 사용
 - ✅ `create-cluster.sh` - 그대로 사용
 - ✅ `install.sh` - 그대로 사용
-
-### templates/ 디렉토리
-- ✅ Backstage 템플릿 - 수정 불필요
 
 ---
 
@@ -185,12 +209,14 @@ export AWS_PROFILE=your-profile-name
 ```bash
 git add config.yaml
 git add packages/external-secrets/manifests/cluster-secret-store.yaml
+git add templates/backstage/*/template.yaml
 git commit -m "Configure for my environment
 
 - Update repo URL to my fork
 - Set cluster name to my-cluster
 - Configure domain and Route53
 - Update ClusterSecretStore region
+- Update Backstage templates with my organization
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -201,17 +227,17 @@ git push origin main
 
 ## ✅ 요약
 
-### 변경 필수 항목 (5개)
+### 변경 필수 항목 (6개)
 1. ✅ `config.yaml` - 모든 환경 변수
 2. ✅ `packages/external-secrets/manifests/cluster-secret-store.yaml` - 리전 (다른 리전 사용 시)
 3. ✅ `private/backstage-github.yaml` - GitHub App 자격 증명
 4. ✅ `private/argocd-github.yaml` - GitHub App 자격 증명
 5. ✅ AWS Credentials - AWS 계정 설정
+6. ✅ `templates/backstage/*/template.yaml` - GitHub Organization 이름
 
 ### 변경 불필요 항목
 - ✅ packages/ 디렉토리 (ClusterSecretStore 제외)
 - ✅ scripts/ 디렉토리
-- ✅ templates/ 디렉토리
 - ✅ 나머지 모든 설정
 
 ---
@@ -220,11 +246,12 @@ git push origin main
 
 **네, 맞습니다!**
 
-Fork한 후 **5개 항목만 업데이트**하면:
+Fork한 후 **6개 항목만 업데이트**하면:
 - ✅ config.yaml (환경 설정)
 - ✅ ClusterSecretStore (리전)
 - ✅ GitHub Apps 자격 증명 (2개)
 - ✅ AWS Credentials
+- ✅ Backstage 템플릿 Organization
 
 **나머지는 모두 그대로 사용 가능합니다!** 🎉
 
