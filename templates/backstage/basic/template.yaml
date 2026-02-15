@@ -11,12 +11,28 @@ spec:
     - title: Configuration Options
       required:
         - name
+        - repoUrl
       properties:
         name:
           type: string
           description: name of this application
-        
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
   steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: This is an example app
+
     - id: template
       name: Generating component
       action: fetch:template
@@ -24,15 +40,22 @@ spec:
         url: ./skeleton
         values:
           name: ${{parameters.name}}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
 
-    - id: publish
-      name: Publishing to a gitea git repository
-      action: publish:gitea
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
       input:
-        description: This is an example app
-        # Hard coded value for this demo purposes only.
-        repoUrl: cnoe.localtest.me:8443/gitea?repo=${{parameters.name}}
+        repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
     - id: create-argocd-app
       name: Create ArgoCD App
       action: cnoe:create-argocd-app
@@ -41,14 +64,14 @@ spec:
         appNamespace: ${{parameters.name}}
         argoInstance: in-cluster
         projectName: default
-        # necessary until we generate our own cert
-        repoUrl: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+        repoUrl: ${{ steps['create-repo'].output.remoteUrl }}
         path: "manifests"
+
     - id: register
       name: Register
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: 'catalog-info.yaml'
 
   output:
