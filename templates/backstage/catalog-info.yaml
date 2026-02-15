@@ -9,6 +9,7 @@ spec:
     - ./argo-workflows/template.yaml
     - ./app-with-bucket/template.yaml
     - ./ray-serve/template-ray-serve.yaml
+    - ./terraform-ec2/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location
