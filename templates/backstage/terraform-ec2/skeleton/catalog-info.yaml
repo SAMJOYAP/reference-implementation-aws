@@ -1,0 +1,41 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.name }}-ec2
+  description: EC2 instance ${{ values.instanceType }} in ${{ values.region }}
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  labels:
+    type: ec2
+    region: ${{ values.region }}
+    managed-by: terraform
+spec:
+  type: ec2-instance
+  owner: platform-team
+  lifecycle: production
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: Terraform configuration for EC2 instance
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+    backstage.io/techdocs-ref: dir:.
+  labels:
+    infrastructure: terraform
+    cloud: aws
+    resource-type: ec2
+  links:
+    - url: ${{ values.remoteUrl }}
+      title: Repository
+      icon: github
+    - url: ${{ values.remoteUrl }}/actions
+      title: GitHub Actions
+      icon: github
+spec:
+  type: infrastructure
+  lifecycle: production
+  owner: platform-team
+  dependsOn:
+    - resource:default/${{ values.name }}-ec2

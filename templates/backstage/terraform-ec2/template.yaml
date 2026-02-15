@@ -1,0 +1,126 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-ec2
+  title: Create EC2 Instance with Terraform
+  description: Creates an EC2 instance using Terraform and GitHub Actions
+  tags:
+    - terraform
+    - aws
+    - ec2
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the EC2 instance
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account. GitHub Apps only work with Organizations.'
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP  # Update this to your GitHub Organization name after forking
+
+    - title: EC2 Configuration
+      properties:
+        instanceType:
+          type: string
+          title: Instance Type
+          description: EC2 instance type
+          default: t3.micro
+          enum:
+            - t3.micro
+            - t3.small
+            - t3.medium
+          enumNames:
+            - 't3.micro (2 vCPU, 1 GB RAM) - Free Tier'
+            - 't3.small (2 vCPU, 2 GB RAM)'
+            - 't3.medium (2 vCPU, 4 GB RAM)'
+        region:
+          type: string
+          title: AWS Region
+          description: AWS region for deployment
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'EC2 instance "${{ parameters.name }}" managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - ec2
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          instanceType: ${{ parameters.instanceType }}
+          region: ${{ parameters.region }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
