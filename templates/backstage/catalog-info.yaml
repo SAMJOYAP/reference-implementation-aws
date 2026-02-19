@@ -11,6 +11,7 @@ spec:
     - ./ray-serve/template-ray-serve.yaml
     - ./terraform-ec2/template.yaml
     - ./nodejs-nginx/template.yaml
+    - ./springboot-apache/template.yaml
     - ./terraform-rds/template.yaml
     - ./terraform-dynamodb/template.yaml
     - ./terraform-elasticache/template.yaml

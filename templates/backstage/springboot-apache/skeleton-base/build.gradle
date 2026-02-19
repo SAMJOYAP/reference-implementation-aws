@@ -1,0 +1,42 @@
+plugins {
+  id 'java'
+  id 'org.springframework.boot' version '${{ values.springBootVersion }}'
+  id 'io.spring.dependency-management' version '1.1.7'
+{% if values.packaging == 'war' %}
+  id 'war'
+{% endif %}
+}
+
+group = '${{ values.groupId }}'
+version = '0.1.0'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(${{ values.javaVersion }})
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter'
+{% if values.useSpringWeb %}
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+{% endif %}
+{% if values.useActuator %}
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+{% endif %}
+{% if values.useLombok %}
+  compileOnly 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  testCompileOnly 'org.projectlombok:lombok'
+  testAnnotationProcessor 'org.projectlombok:lombok'
+{% endif %}
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+  useJUnitPlatform()
+}
