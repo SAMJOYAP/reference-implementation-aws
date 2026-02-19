@@ -1,0 +1,131 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: nodejs-nginx-webapp
+  title: Node.js Web App (Nginx + Optional Express)
+  description: Creates a Node.js web project served by nginx, with optional Express setup and GitHub Actions CI.
+  tags:
+    - nodejs
+    - nginx
+    - express
+    - web
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Project Information
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          title: Project Name
+          description: Kubernetes and repository-safe project name
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account.'
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+    - title: Runtime Options
+      properties:
+        nodeVersion:
+          type: string
+          title: Node.js Version
+          description: Default is 24.13.1 LTS. You can choose another version.
+          default: 24.13.1
+          enum:
+            - 24.13.1
+            - 22.17.1
+            - 20.19.4
+        useExpress:
+          type: boolean
+          title: Install Express
+          description: If checked, Express server scaffold and dependency are added automatically.
+          default: false
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: Node.js nginx web project generated from Backstage template
+        topics:
+          - backstage
+          - nodejs
+          - nginx
+          - webapp
+
+    - id: template-base
+      name: Generate Base Project
+      action: fetch:template
+      input:
+        url: ./skeleton-base
+        values:
+          name: ${{ parameters.name }}
+          nodeVersion: ${{ parameters.nodeVersion }}
+          useExpress: ${{ parameters.useExpress }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: template-express
+      if: ${{ parameters.useExpress }}
+      name: Add Express Overlay
+      action: fetch:template
+      input:
+        url: ./skeleton-express
+        values:
+          name: ${{ parameters.name }}
+          nodeVersion: ${{ parameters.nodeVersion }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Wait for Repository
+      action: roadiehq:utils:sleep
+      input:
+        amount: 5
+
+    - id: create-argocd-app
+      name: Create ArgoCD App
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{ parameters.name }}
+        appNamespace: ${{ parameters.name }}
+        argoInstance: in-cluster
+        projectName: default
+        repoUrl: ${{ steps['create-repo'].output.remoteUrl }}
+        path: manifests
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
