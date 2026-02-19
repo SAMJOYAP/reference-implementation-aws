@@ -122,7 +122,7 @@ spec:
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        access: ${{ parameters.repoVisibility }}
+        repoVisibility: ${{ parameters.repoVisibility }}
         description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
         topics:
           - spring-boot
