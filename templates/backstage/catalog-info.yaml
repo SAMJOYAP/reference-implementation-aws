@@ -11,6 +11,10 @@ spec:
     - ./ray-serve/template-ray-serve.yaml
     - ./terraform-ec2/template.yaml
     - ./nodejs-nginx/template.yaml
+    - ./terraform-rds/template.yaml
+    - ./terraform-dynamodb/template.yaml
+    - ./terraform-elasticache/template.yaml
+    - ./terraform-data-pipeline/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location

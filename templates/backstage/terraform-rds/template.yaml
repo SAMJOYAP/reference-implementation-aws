@@ -1,0 +1,167 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-rds
+  title: Create RDS Database with Terraform
+  description: Creates an RDS instance (PostgreSQL/MySQL/Aurora) with Multi-AZ, Performance Insights, CloudWatch Logs, and Secrets Manager integration
+  tags:
+    - terraform
+    - aws
+    - rds
+    - database
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the RDS instance (lowercase, hyphens only)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+    - title: RDS Configuration
+      properties:
+        engine:
+          type: string
+          title: Database Engine
+          default: postgres
+          enum:
+            - postgres
+            - mysql
+            - aurora-postgresql
+            - aurora-mysql
+          enumNames:
+            - 'PostgreSQL 15'
+            - 'MySQL 8.0'
+            - 'Aurora PostgreSQL 15'
+            - 'Aurora MySQL 8.0'
+        instanceClass:
+          type: string
+          title: Instance Class
+          default: db.t3.micro
+          enum:
+            - db.t3.micro
+            - db.t3.small
+            - db.t3.medium
+            - db.r6g.large
+          enumNames:
+            - 'db.t3.micro (2 vCPU, 1 GB) - Dev/Test'
+            - 'db.t3.small (2 vCPU, 2 GB)'
+            - 'db.t3.medium (2 vCPU, 4 GB)'
+            - 'db.r6g.large (2 vCPU, 16 GB) - Production'
+        multiAz:
+          type: boolean
+          title: Multi-AZ Deployment
+          default: false
+          description: Enable standby replica in a different Availability Zone
+        backupRetentionDays:
+          type: integer
+          title: Backup Retention (days)
+          default: 7
+          enum: [7, 14, 30]
+          enumNames:
+            - '7 days'
+            - '14 days'
+            - '30 days'
+        performanceInsights:
+          type: boolean
+          title: Enable Performance Insights
+          default: false
+          description: Not supported on db.t3.micro
+        cloudwatchLogs:
+          type: boolean
+          title: Export Logs to CloudWatch
+          default: true
+        secretsManager:
+          type: boolean
+          title: Store Credentials in Secrets Manager
+          default: true
+          description: Auto-generates DB password and stores connection info
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'RDS "${{ parameters.name }}" (${{ parameters.engine }}) managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - rds
+          - database
+          - backstage
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          engine: ${{ parameters.engine }}
+          instanceClass: ${{ parameters.instanceClass }}
+          multiAz: ${{ parameters.multiAz }}
+          backupRetentionDays: ${{ parameters.backupRetentionDays }}
+          performanceInsights: ${{ parameters.performanceInsights }}
+          cloudwatchLogs: ${{ parameters.cloudwatchLogs }}
+          secretsManager: ${{ parameters.secretsManager }}
+          region: ${{ parameters.region }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions

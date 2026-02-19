@@ -1,0 +1,42 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.name }}-pipeline
+  description: Data Pipeline (${{ values.pipelineType }}) in ${{ values.region }}
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  labels:
+    type: data-pipeline
+    pipeline-type: ${{ values.pipelineType }}
+    region: ${{ values.region }}
+    managed-by: terraform
+spec:
+  type: data-pipeline
+  owner: platform-team
+  lifecycle: production
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: Terraform configuration for ${{ values.pipelineType }} data pipeline
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+    backstage.io/techdocs-ref: dir:.
+  labels:
+    infrastructure: terraform
+    cloud: aws
+    resource-type: data-pipeline
+  links:
+    - url: ${{ values.remoteUrl }}
+      title: Repository
+      icon: github
+    - url: ${{ values.remoteUrl }}/actions
+      title: GitHub Actions
+      icon: github
+spec:
+  type: infrastructure
+  lifecycle: production
+  owner: platform-team
+  dependsOn:
+    - resource:default/${{ values.name }}-pipeline

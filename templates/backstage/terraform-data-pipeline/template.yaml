@@ -1,0 +1,251 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-data-pipeline
+  title: Create Data Pipeline (Glue/EMR) with Terraform
+  description: Creates an AWS data pipeline with S3 Data Lake, Glue Catalog/Crawler/Job, optional EMR Spark cluster, KMS encryption, and CloudWatch logging
+  tags:
+    - terraform
+    - aws
+    - glue
+    - emr
+    - data-pipeline
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the data pipeline (lowercase, hyphens only)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+
+    - title: Pipeline Type
+      properties:
+        pipelineType:
+          type: string
+          title: Pipeline Type
+          default: glue
+          enum:
+            - glue
+            - emr
+            - both
+          enumNames:
+            - 'Glue only (S3 Data Lake + Glue Catalog + Crawler + Job)'
+            - 'EMR only (S3 Data Lake + EMR Spark cluster)'
+            - 'Both Glue and EMR'
+
+    - title: S3 Data Lake
+      properties:
+        s3BucketSuffix:
+          type: string
+          title: S3 Bucket Name Suffix
+          description: Bucket will be named "{name}-datalake-{suffix}". Use your AWS account ID or a unique string.
+          default: datalake
+        s3Prefix:
+          type: string
+          title: S3 Key Prefix for Raw Data
+          default: raw/
+          description: S3 prefix where raw input data is stored (used by Crawler)
+
+    - title: Glue Configuration
+      properties:
+        glueJobType:
+          type: string
+          title: Glue Job Type
+          default: glueetl
+          enum:
+            - glueetl
+            - pythonshell
+          enumNames:
+            - 'Glue ETL (Apache Spark, 2 DPU minimum)'
+            - 'Python Shell (0.0625 DPU, for lightweight scripts)'
+        glueWorkerType:
+          type: string
+          title: Glue Worker Type (ETL only)
+          default: G.1X
+          enum:
+            - G.025X
+            - G.1X
+            - G.2X
+          enumNames:
+            - 'G.025X (0.25 DPU)'
+            - 'G.1X (1 DPU, 4 vCPU, 16 GB)'
+            - 'G.2X (2 DPU, 8 vCPU, 32 GB)'
+        glueWorkerCount:
+          type: integer
+          title: Number of Glue Workers
+          default: 2
+          enum: [2, 5, 10]
+          enumNames:
+            - '2 workers'
+            - '5 workers'
+            - '10 workers'
+        crawlerSchedule:
+          type: string
+          title: Crawler Schedule (cron)
+          default: 'cron(0 1 * * ? *)'
+          description: 'Cron expression for automatic crawling. Use "disabled" to trigger manually only.'
+
+    - title: EMR Configuration
+      properties:
+        emrReleaseLabel:
+          type: string
+          title: EMR Release Label
+          default: emr-7.0.0
+          enum:
+            - emr-7.0.0
+            - emr-6.15.0
+            - emr-6.14.0
+          enumNames:
+            - 'EMR 7.0.0 (Spark 3.5, Hadoop 3.3)'
+            - 'EMR 6.15.0 (Spark 3.4, Hadoop 3.3)'
+            - 'EMR 6.14.0 (Spark 3.4, Hadoop 3.3)'
+        emrMasterInstanceType:
+          type: string
+          title: EMR Master Instance Type
+          default: m5.xlarge
+          enum:
+            - m5.xlarge
+            - m5.2xlarge
+            - r5.xlarge
+          enumNames:
+            - 'm5.xlarge (4 vCPU, 16 GB)'
+            - 'm5.2xlarge (8 vCPU, 32 GB)'
+            - 'r5.xlarge (4 vCPU, 32 GB)'
+        emrCoreInstanceType:
+          type: string
+          title: EMR Core Instance Type
+          default: m5.xlarge
+          enum:
+            - m5.xlarge
+            - m5.2xlarge
+            - r5.xlarge
+          enumNames:
+            - 'm5.xlarge (4 vCPU, 16 GB)'
+            - 'm5.2xlarge (8 vCPU, 32 GB)'
+            - 'r5.xlarge (4 vCPU, 32 GB)'
+        emrCoreCount:
+          type: integer
+          title: EMR Core Node Count
+          default: 2
+          enum: [2, 4, 8]
+          enumNames:
+            - '2 core nodes'
+            - '4 core nodes'
+            - '8 core nodes'
+
+    - title: Security & Logging
+      properties:
+        kmsEncryption:
+          type: boolean
+          title: Enable KMS Encryption
+          default: false
+          description: Encrypt S3 data, Glue job bookmarks, and EMR EBS volumes with AWS managed KMS key
+        cloudwatchLogs:
+          type: boolean
+          title: Export Logs to CloudWatch
+          default: true
+          description: Send Glue job and EMR application logs to CloudWatch Logs
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'Data Pipeline "${{ parameters.name }}" (${{ parameters.pipelineType }}) managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - glue
+          - emr
+          - data-pipeline
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          pipelineType: ${{ parameters.pipelineType }}
+          s3BucketSuffix: ${{ parameters.s3BucketSuffix }}
+          s3Prefix: ${{ parameters.s3Prefix }}
+          glueJobType: ${{ parameters.glueJobType }}
+          glueWorkerType: ${{ parameters.glueWorkerType }}
+          glueWorkerCount: ${{ parameters.glueWorkerCount }}
+          crawlerSchedule: ${{ parameters.crawlerSchedule }}
+          emrReleaseLabel: ${{ parameters.emrReleaseLabel }}
+          emrMasterInstanceType: ${{ parameters.emrMasterInstanceType }}
+          emrCoreInstanceType: ${{ parameters.emrCoreInstanceType }}
+          emrCoreCount: ${{ parameters.emrCoreCount }}
+          kmsEncryption: ${{ parameters.kmsEncryption }}
+          cloudwatchLogs: ${{ parameters.cloudwatchLogs }}
+          region: ${{ parameters.region }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions

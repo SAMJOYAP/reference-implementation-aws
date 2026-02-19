@@ -1,0 +1,229 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-elasticache
+  title: Create ElastiCache Redis with Terraform
+  description: Creates an ElastiCache Redis cluster with optional Cluster Mode, Multi-AZ, TLS/AUTH, snapshots, and CloudWatch alarms
+  tags:
+    - terraform
+    - aws
+    - elasticache
+    - redis
+    - cache
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the ElastiCache cluster (lowercase, hyphens only)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+
+    - title: Redis Configuration
+      properties:
+        clusterMode:
+          type: string
+          title: Cluster Mode
+          default: disabled
+          enum:
+            - disabled
+            - enabled
+          enumNames:
+            - 'Cluster Mode Disabled (single shard, up to 5 replicas)'
+            - 'Cluster Mode Enabled (multiple shards, horizontal scaling)'
+        engineVersion:
+          type: string
+          title: Redis Engine Version
+          default: '7.0'
+          enum:
+            - '7.1'
+            - '7.0'
+            - '6.2'
+          enumNames:
+            - 'Redis 7.1'
+            - 'Redis 7.0'
+            - 'Redis 6.2'
+        nodeType:
+          type: string
+          title: Node Type
+          default: cache.t3.micro
+          enum:
+            - cache.t3.micro
+            - cache.t3.small
+            - cache.t3.medium
+            - cache.r7g.large
+            - cache.r7g.xlarge
+          enumNames:
+            - 'cache.t3.micro (2 vCPU, 0.5 GB) - Dev/Test'
+            - 'cache.t3.small (2 vCPU, 1.37 GB)'
+            - 'cache.t3.medium (2 vCPU, 3.09 GB)'
+            - 'cache.r7g.large (2 vCPU, 13.07 GB) - Production'
+            - 'cache.r7g.xlarge (4 vCPU, 26.32 GB) - Production'
+        numCacheClusters:
+          type: integer
+          title: Number of Cache Nodes (Cluster Mode Disabled)
+          default: 1
+          enum: [1, 2, 3]
+          enumNames:
+            - '1 node (no replication)'
+            - '2 nodes (1 primary + 1 replica)'
+            - '3 nodes (1 primary + 2 replicas)'
+        numShards:
+          type: integer
+          title: Number of Shards (Cluster Mode Enabled)
+          default: 2
+          enum: [2, 3, 4, 6]
+          enumNames:
+            - '2 shards'
+            - '3 shards'
+            - '4 shards'
+            - '6 shards'
+        replicasPerShard:
+          type: integer
+          title: Replicas Per Shard (Cluster Mode Enabled)
+          default: 1
+          enum: [1, 2]
+          enumNames:
+            - '1 replica per shard'
+            - '2 replicas per shard'
+        autoFailover:
+          type: boolean
+          title: Enable Automatic Failover
+          default: false
+          description: Requires at least 1 replica. Automatically promotes a replica on primary failure.
+        multiAz:
+          type: boolean
+          title: Enable Multi-AZ
+          default: false
+          description: Distributes replicas across multiple Availability Zones (requires auto failover).
+        transitEncryption:
+          type: boolean
+          title: Enable TLS (in-transit encryption)
+          default: true
+          description: Encrypts data in transit between client and Redis
+        atRestEncryption:
+          type: boolean
+          title: Enable Encryption at Rest
+          default: true
+        authEnabled:
+          type: boolean
+          title: Enable AUTH Token
+          default: false
+          description: Requires clients to authenticate with a password (requires TLS)
+        snapshotRetentionDays:
+          type: integer
+          title: Snapshot Retention (days)
+          default: 1
+          enum: [0, 1, 7, 14]
+          enumNames:
+            - 'Disabled'
+            - '1 day'
+            - '7 days'
+            - '14 days'
+        cloudwatchAlarms:
+          type: boolean
+          title: Enable CloudWatch Alarms
+          default: false
+          description: Creates CPU and memory alarms (requires an existing SNS topic ARN in GitHub secrets)
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'ElastiCache Redis "${{ parameters.name }}" managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - elasticache
+          - redis
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          clusterMode: ${{ parameters.clusterMode }}
+          engineVersion: ${{ parameters.engineVersion }}
+          nodeType: ${{ parameters.nodeType }}
+          numCacheClusters: ${{ parameters.numCacheClusters }}
+          numShards: ${{ parameters.numShards }}
+          replicasPerShard: ${{ parameters.replicasPerShard }}
+          autoFailover: ${{ parameters.autoFailover }}
+          multiAz: ${{ parameters.multiAz }}
+          transitEncryption: ${{ parameters.transitEncryption }}
+          atRestEncryption: ${{ parameters.atRestEncryption }}
+          authEnabled: ${{ parameters.authEnabled }}
+          snapshotRetentionDays: ${{ parameters.snapshotRetentionDays }}
+          cloudwatchAlarms: ${{ parameters.cloudwatchAlarms }}
+          region: ${{ parameters.region }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
