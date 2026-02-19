@@ -18,15 +18,10 @@ spec:
         entity-id: ${{ values.projectName }}
     spec:
       containers:
-        - name: apache
+        - name: app
           image: httpd:2.4-alpine
           ports:
             - containerPort: 80
-          volumeMounts:
-            - name: web-content
-              mountPath: /usr/local/apache2/htdocs/index.html
-              subPath: index.html
-      volumes:
-        - name: web-content
-          configMap:
-            name: ${{ values.projectName }}-web
+          env:
+            - name: PORT
+              value: "80"

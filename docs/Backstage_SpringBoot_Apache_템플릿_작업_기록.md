@@ -75,7 +75,7 @@ Ingress host 형식:
 - `manifests/namespace.yaml`
 - `manifests/deployment.yaml`
 - `manifests/service.yaml`
-- `manifests/configmap-web.yaml`
+- `src/main/resources/static/index.html`
 
 ### 4.2 Ingress 스켈레톤
 
@@ -91,14 +91,11 @@ Ingress host 형식:
 
 ## 5. 배포 런타임 구성
 
-앱 컨테이너는 Apache(httpd) 기반으로 생성:
+앱은 Spring Boot 정적 리소스를 통해 랜딩 페이지를 직접 서빙하도록 구성:
 
-- 이미지: `httpd:2.4-alpine`
+- `src/main/resources/static/index.html` -> `/`
 - 서비스: `ClusterIP`
 - 포트: 템플릿 `servicePort` 입력값 사용
-
-또한 `configmap-web.yaml`의 `index.html`을 마운트하여,
-Apache 기본 welcome 페이지 대신 커스텀 랜딩 페이지가 보이도록 구성.
 
 ---
 
@@ -124,11 +121,11 @@ Apache 기본 welcome 페이지 대신 커스텀 랜딩 페이지가 보이도�
 
 문구:
 
-- `Powered by Apache HTTP Server`
+- `Powered by Spring Boot`
 
 수정 파일:
 
-- `templates/backstage/springboot-apache/skeleton-base/manifests/configmap-web.yaml`
+- `templates/backstage/springboot-apache/skeleton-base/src/main/resources/static/index.html`
 
 ---
 
@@ -237,3 +234,21 @@ Apache 기본 welcome 페이지 대신 커스텀 랜딩 페이지가 보이도�
 - 최소 권한에 아래 action 포함 필요:
   - `ecr:BatchGetImage`
   - `ecr:DescribeImages`
+
+---
+
+## 13. 개발 시작 전 주의사항 (/ 리디렉션)
+
+- 초기 템플릿은 앱 코드 기준으로 `/`에서 랜딩 화면을 직접 서빙
+- 필요 시 개발자가 `src/main/resources/static/index.html`을 앱 홈으로 교체 가능
+
+## 14. 개발자 가이드 (Spring Boot) - `/` 페이지 커스터마이징
+
+- 수정 파일: `src/main/resources/static/index.html`
+- 이 파일이 `/` 응답 화면이므로 원하는 UI/기능으로 그대로 교체하면 됨
+- Kubernetes 매니페스트 수정은 필요 없음
+- 반영 흐름:
+1. `src/main/resources/static/index.html` 수정
+2. `main`으로 push
+3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
+4. PR 병합 후 배포 반영

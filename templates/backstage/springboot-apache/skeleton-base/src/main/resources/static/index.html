@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${{ values.projectName }} | Runtime Overview</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --ink: #0f172a;
+        --muted: #475569;
+        --line: #dbe3ef;
+        --card: #ffffff;
+        --brand-soft: #ccfbf1;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 10%, #dcfce7 0%, transparent 35%),
+          radial-gradient(circle at 90% 20%, #dbeafe 0%, transparent 30%),
+          var(--bg);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .shell {
+        width: min(920px, 100%);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      }
+      .hero {
+        padding: 30px 30px 22px;
+        background: linear-gradient(135deg, #ecfeff 0%, #f8fafc 45%, #ecfdf5 100%);
+        border-bottom: 1px solid var(--line);
+      }
+      .chip {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        color: #134e4a;
+        background: var(--brand-soft);
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 5vw, 42px);
+        line-height: 1.08;
+      }
+      .subtitle {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .grid {
+        padding: 20px 20px 24px;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .item {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+      }
+      .label {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+      }
+      .value {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        word-break: break-word;
+      }
+      code {
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 2px 7px;
+        border-radius: 7px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <span class="chip">Backstage Generated</span>
+        <h1>${{ values.projectName }}</h1>
+        <p class="subtitle">Spring Boot runtime landing page with template metadata.</p>
+        <p class="subtitle"><strong>Powered by Spring Boot</strong></p>
+      </section>
+      <section class="grid">
+        <article class="item">
+          <p class="label">Java Version</p>
+          <p class="value"><code>${{ values.javaVersion }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Spring Boot</p>
+          <p class="value"><code>${{ values.springBootVersion }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Gradle Version</p>
+          <p class="value"><code>${{ values.gradleVersion }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Packaging</p>
+          <p class="value"><code>${{ values.packaging }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Spring Web</p>
+          <p class="value"><code>${{ values.useSpringWeb }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Actuator</p>
+          <p class="value"><code>${{ values.useActuator }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Lombok</p>
+          <p class="value"><code>${{ values.useLombok }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Service Port</p>
+          <p class="value"><code>${{ values.servicePort }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Ingress Host</p>
+          <p class="value"><code>${{ values.hostPrefix }}.${{ values.baseDomain }}</code></p>
+        </article>
+        <article class="item">
+          <p class="label">Runtime</p>
+          <p class="value"><code>spring-boot</code></p>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
