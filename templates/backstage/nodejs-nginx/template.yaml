@@ -50,6 +50,29 @@ spec:
           title: Install Express
           description: If checked, Express server scaffold and dependency are added automatically.
           default: false
+    - title: Network Options
+      properties:
+        servicePort:
+          type: number
+          title: Service Port
+          description: Service port exposed inside the cluster (nginx target port is fixed to 80).
+          default: 80
+        enableIngress:
+          type: boolean
+          title: Create Ingress
+          description: If checked, ingress manifest is generated.
+          default: true
+        hostPrefix:
+          type: string
+          title: Host Prefix
+          description: Subdomain prefix. Example `node-test`.
+          default: node-test
+          pattern: '^[a-z0-9-]+$'
+        baseDomain:
+          type: string
+          title: Base Domain
+          description: Base domain used to build ingress host.
+          default: sesac.already121.cloud
 
   steps:
     - id: create-repo
@@ -73,9 +96,24 @@ spec:
           name: ${{ parameters.name }}
           nodeVersion: ${{ parameters.nodeVersion }}
           useExpress: ${{ parameters.useExpress }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: template-ingress
+      if: ${{ parameters.enableIngress }}
+      name: Add Ingress Manifest
+      action: fetch:template
+      input:
+        url: ./skeleton-ingress
+        values:
+          name: ${{ parameters.name }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
 
     - id: template-express
       if: ${{ parameters.useExpress }}

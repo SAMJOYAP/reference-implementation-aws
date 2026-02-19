@@ -9,7 +9,7 @@ spec:
   selector:
     app.kubernetes.io/name: ${{ values.name }}
   ports:
-    - port: 80
+    - port: ${{ values.servicePort }}
       targetPort: 80
       protocol: TCP
   type: ClusterIP
