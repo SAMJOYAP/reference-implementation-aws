@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: Node.js web app served by nginx
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+    argocd/app-name: ${{ values.name }}
+    backstage.io/kubernetes-label-selector: 'entity-id=${{ values.name }}'
+    backstage.io/kubernetes-namespace: ${{ values.name }}
+  links:
+    - url: ${{ values.remoteUrl }}
+      title: Repository
+      icon: github
+    - url: ${{ values.remoteUrl }}/actions
+      title: GitHub Actions
+      icon: github
+spec:
+  type: service
+  owner: guests
+  lifecycle: experimental

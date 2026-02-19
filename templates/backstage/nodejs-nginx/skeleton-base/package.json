@@ -1,0 +1,15 @@
+{
+  "name": "${{ values.name }}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node.js web project served by nginx",
+  "engines": {
+    "node": ">=${{ values.nodeVersion }}"
+  },
+  "scripts": {
+    "lint": "node ./scripts/lint.mjs",
+    "test": "node --test",
+    "build": "node ./scripts/build.mjs",
+    "start": "node ./scripts/serve-info.mjs"
+  }
+}
