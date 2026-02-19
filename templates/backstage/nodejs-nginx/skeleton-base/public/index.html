@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${{ values.name }}</title>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: sans-serif; margin: 0; padding: 40px; background: #f8fafc; color: #0f172a; }
+      .card { max-width: 700px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+      h1 { margin-top: 0; }
+      code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>${{ values.name }}</h1>
+      <p>This web project is served by <code>nginx</code>.</p>
+      <p>Node.js version: <code>${{ values.nodeVersion }}</code></p>
+      <p>Express enabled: <code>${{ values.useExpress }}</code></p>
+    </main>
+  </body>
+</html>
