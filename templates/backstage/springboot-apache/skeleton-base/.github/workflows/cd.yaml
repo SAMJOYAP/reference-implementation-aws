@@ -1,21 +1,22 @@
 name: CD
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
   publish-ecr:
     name: Build and Push to ECR
-    if: github.actor != 'github-actions[bot]'
+    if: (github.event_name == 'workflow_dispatch') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.actor.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      ECR_REPOSITORY: ${{ github.event.repository.name }}
+      AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
+      ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,8 +60,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
+          aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
 
       - name: Ensure ECR repository exists
         shell: bash
@@ -74,9 +75,9 @@ jobs:
 
       - name: Build and push image
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
-          SHA_TAG: ${{ steps.version.outputs.sha_tag }}
+          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
+          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
+          SHA_TAG: {% raw %}${{ steps.version.outputs.sha_tag }}{% endraw %}
         run: |
           IMAGE_URI="$REGISTRY/$ECR_REPOSITORY"
           docker build -t "$IMAGE_URI:$VERSION_TAG" -t "$IMAGE_URI:$SHA_TAG" .
@@ -85,8 +86,8 @@ jobs:
 
       - name: Update deployment image tag
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          VERSION_TAG: ${{ steps.version.outputs.version_tag }}
+          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
+          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
         shell: bash
         run: |
           IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
