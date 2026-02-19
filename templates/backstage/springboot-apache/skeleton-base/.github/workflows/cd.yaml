@@ -41,8 +41,12 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION_TAG="$(git describe --tags --always --dirty=-dev)"
-          VERSION_TAG="${VERSION_TAG#v}"
+          if git tag --list | grep -q .; then
+            VERSION_TAG="$(git describe --tags --always --dirty=-dev)"
+            VERSION_TAG="${VERSION_TAG#v}"
+          else
+            VERSION_TAG="1.0.0"
+          fi
           SHA_TAG="${GITHUB_SHA::7}"
           echo "version_tag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
           echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
