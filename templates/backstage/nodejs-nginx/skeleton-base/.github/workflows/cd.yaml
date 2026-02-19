@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      pull-requests: write
     env:
       AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
       ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
@@ -73,15 +74,27 @@ jobs:
           IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
           sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" manifests/deployment.yaml
 
-      - name: Commit and push manifest update
+      - name: Check manifest changes
+        id: manifest_changes
         shell: bash
         run: |
           if git diff --quiet -- manifests/deployment.yaml; then
             echo "No manifest changes detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add manifests/deployment.yaml
-          git commit -m "chore(cd): update image tag [skip ci]"
-          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request for manifest update
+        if: steps.manifest_changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: chore(cd): update image tag [skip ci]
+          title: chore(cd): update image tag
+          body: |
+            Automated manifest image tag update from CD workflow.
+          branch: chore/cd-update-image
+          base: main
+          delete-branch: true
+          add-paths: |
+            manifests/deployment.yaml
