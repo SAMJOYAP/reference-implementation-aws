@@ -2,8 +2,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: springboot-gradle-apache
-  title: Spring Boot + Gradle + Apache
-  description: Creates a Java Spring Boot project with Gradle and Apache runtime manifests.
+  title: Java Web App (Apache + Spring Boot + Gradle)
+  description: Creates a Java web project served by Apache, with Spring Boot + Gradle setup and optional ingress.
   tags:
     - java
     - spring-boot
@@ -114,7 +114,7 @@ spec:
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        description: Spring Boot + Gradle + Apache project generated from Backstage template
+        description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
         topics:
           - spring-boot
           - gradle
