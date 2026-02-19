@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.projectName }}
-  description: Spring Boot project generated from Backstage template
+  description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
