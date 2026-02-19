@@ -259,6 +259,60 @@ refusing to allow a GitHub App to create or update workflow
 2. GitHub Organization/Repository에 앱 재설치(또는 권한 재승인)
 3. Backstage 템플릿 재실행
 
+---
+
+## 11. 추가 반영 사항 (최신)
+
+### 11.1 Repository 공개 범위 선택 옵션 추가
+
+- `template.yaml`에 `repoVisibility` 파라미터 추가
+  - 선택값: `public`, `private`
+  - 기본값: `public`
+- `github:repo:create` 입력에 `repoVisibility` 연결
+
+### 11.2 CI/CD 분리 및 실행 순서 고정
+
+- `ci.yaml`: 빌드/테스트 전용
+- `cd.yaml`: 배포 전용
+- CD 트리거를 `push`에서 `workflow_run`으로 변경해 **CI 성공 후 CD 실행**으로 고정
+
+### 11.3 CD GitHub 표현식 깨짐 이슈 대응
+
+- Backstage 템플릿 렌더링 시 `${{ ... }}`가 빈값/NaN으로 깨지는 문제 대응
+- `cd.yaml`의 GitHub 표현식에 `{% raw %}...{% endraw %}` 적용
+
+### 11.4 버전 태그 정책
+
+- Git tag가 있으면 해당 tag 기반 버전 사용
+- Git tag가 없으면 기본 버전 `1.0.0` 사용
+
+### 11.5 보호 브랜치 대응
+
+- 직접 `main` push 방식 제거
+- `peter-evans/create-pull-request`로 `manifests/deployment.yaml` 변경 PR 자동 생성 방식으로 전환
+
+---
+
+## 12. GitHub Settings 필수 확인 항목
+
+### 12.1 Organization Actions 권한
+
+- `Settings -> Actions -> General`
+- `Workflow permissions`: `Read and write permissions`
+- `Allow GitHub Actions to create and approve pull requests`: 활성화
+
+### 12.2 Secrets/Variables
+
+- `Settings -> Secrets and variables -> Actions`
+- 필수 secret:
+  - `AWS_ROLE_ARN`
+  - `AWS_REGION`
+- Organization secret 사용 시 `Visibility`를 실행 repo 범위(전체 또는 선택 repo)로 정확히 설정
+
+### 12.3 브랜치 보호 규칙
+
+- `main`이 PR 병합만 허용되는 경우, 현재 CD 설계(PR 자동 생성)가 정상 동작 방식
+
 ### 확인 방법
 
 1. 템플릿 실행 로그에서 `Initialize Repository` 성공 여부 확인

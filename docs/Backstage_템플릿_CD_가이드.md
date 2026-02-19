@@ -33,26 +33,28 @@ CI (`ci.yaml`):
 - PR, main push에서 빌드/테스트 수행
 
 CD (`cd.yaml`):
-- `main` push에서만 실행
+- `workflow_run` 기반으로 CI 완료 후 실행
+- `CI` 성공 + `main` 브랜치 조건에서만 실행
 - ECR 이미지 빌드/푸시
 - `manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
-- 해당 변경 커밋/푸시 (`chore(cd): update image tag [skip ci]`)
+- 보호 브랜치 환경을 고려해 direct push 대신 PR 자동 생성
+- 필요 시 `workflow_dispatch`로 수동 실행 가능
 
 참고:
-- `cd.yaml`에는 `if: github.actor != 'github-actions[bot]'` 조건이 있어 bot 커밋 루프를 방지합니다.
+- Backstage 템플릿 렌더링 시 GitHub 표현식이 깨지지 않도록 `{% raw %}...{% endraw %}`를 사용합니다.
 
 ---
 
 ## 4. CD 동작 흐름
 
 1. 개발자가 `main` 브랜치에 코드 push
-2. GitHub Actions `CD` 워크플로우 실행
-3. Git 태그 기반 버전 계산 (`git describe --tags --always --dirty=-dev`)
-4. Docker 이미지 빌드 후 ECR에 push
-5. `manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
-6. 변경된 매니페스트를 `main`에 commit/push
-7. Argo CD가 Git 변경 감지 후 동기화
-8. Kubernetes Pod가 새 이미지 버전으로 롤링 업데이트
+2. GitHub Actions `CI` 실행 및 성공
+3. `workflow_run`으로 `CD` 실행
+4. Git 태그 기반 버전 계산 (태그 없으면 `1.0.0`)
+5. Docker 이미지 빌드 후 ECR에 push
+6. `manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
+7. 변경 매니페스트로 PR 자동 생성
+8. PR 병합 후 Argo CD가 Git 변경 감지, 클러스터 반영
 
 ---
 
@@ -60,15 +62,17 @@ CD (`cd.yaml`):
 
 ```mermaid
 flowchart TD
-    A[Developer push to main] --> B[GitHub Actions CD]
-    B --> C[Resolve version from git tag]
-    C --> D[Build Docker image]
-    D --> E[Push image to Amazon ECR]
-    E --> F[Update manifests/deployment.yaml image tag]
-    F --> G[Commit and push manifest change]
-    G --> H[Argo CD detects Git change]
-    H --> I[Sync to cluster]
-    I --> J[Pod rollout with new version]
+    A[Developer push to main] --> B[GitHub Actions CI]
+    B --> C[CI success]
+    C --> C2[GitHub Actions CD via workflow_run]
+    C2 --> D[Resolve version from git tag or 1.0.0]
+    D --> E[Build Docker image]
+    E --> F[Push image to Amazon ECR]
+    F --> G[Update manifests/deployment.yaml image tag]
+    G --> H[Create PR for manifest update]
+    H --> I[Merge PR to main]
+    I --> J[Argo CD detects Git change and sync]
+    J --> K[Pod rollout with new version]
 ```
 
 ---
@@ -83,6 +87,10 @@ flowchart TD
 설명:
 - `AWS_ROLE_ARN`: GitHub OIDC로 AssumeRole 할 AWS IAM Role ARN
 - `AWS_REGION`: ECR 리전 (예: `ap-northeast-2`)
+
+권장:
+- 민감정보가 아닌 `AWS_REGION`은 Organization Variables로 관리해도 무방
+- 현재 템플릿은 Secret(`secrets.AWS_REGION`) 기반으로 작성되어 있으므로 동일 방식 유지 시 Secret에 등록
 
 ---
 
@@ -101,6 +109,11 @@ flowchart TD
 2. Organization Secrets에 `AWS_ROLE_ARN`, `AWS_REGION` 생성
 3. 접근 대상 Repository 범위를 제한(전체 또는 특정 repo)
 
+추가 필수 설정:
+1. `Organization Settings -> Actions -> General`
+2. `Workflow permissions`: `Read and write permissions`
+3. `Allow GitHub Actions to create and approve pull requests`: 활성화
+
 ---
 
 ## 8. 운영 체크리스트
@@ -108,6 +121,7 @@ flowchart TD
 1. 생성된 repo에 `cd.yaml`이 포함되어 있는지 확인
 2. Secrets(`AWS_ROLE_ARN`, `AWS_REGION`)이 유효한지 확인
 3. IAM Role의 OIDC Trust 정책이 GitHub repo를 허용하는지 확인
-4. ECR 리포지토리 생성/푸시 권한이 Role에 포함되어 있는지 확인
-5. Argo CD Application이 Auto Sync 상태인지 확인
-
+4. IAM Role에 ECR 권한(`BatchGetImage`, `DescribeImages` 포함)이 있는지 확인
+5. Organization/Repository Actions 권한에서 PR 생성이 허용되어 있는지 확인
+6. 브랜치 보호 규칙(main) 하에서 CD PR 병합 프로세스가 운영되는지 확인
+7. Argo CD Application이 Auto Sync 상태인지 확인
