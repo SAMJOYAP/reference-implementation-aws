@@ -1,0 +1,22 @@
+{
+  "name": "${{ values.name }}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript web project served by nginx",
+  "engines": {
+    "node": ">=${{ values.nodeVersion }}"
+  },
+  "type": "module",
+  "scripts": {
+    "lint": "node ./scripts/lint.mjs",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json && node ./scripts/build.mjs",
+    "start": "node ./scripts/serve-info.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
+}

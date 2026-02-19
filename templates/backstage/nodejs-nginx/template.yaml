@@ -36,6 +36,14 @@ spec:
               - SAMJOYAP
     - title: Runtime Options
       properties:
+        appLanguage:
+          type: string
+          title: Language
+          description: Choose JavaScript or TypeScript project scaffold.
+          default: javascript
+          enum:
+            - javascript
+            - typescript
         nodeVersion:
           type: string
           title: Node.js Version
@@ -72,7 +80,7 @@ spec:
           type: string
           title: Base Domain
           description: Base domain used to build ingress host.
-          default: sesac.already121.cloud
+          default: sesac.already11.cloud
 
   steps:
     - id: create-repo
@@ -94,6 +102,7 @@ spec:
         url: ./skeleton-base
         values:
           name: ${{ parameters.name }}
+          appLanguage: ${{ parameters.appLanguage }}
           nodeVersion: ${{ parameters.nodeVersion }}
           useExpress: ${{ parameters.useExpress }}
           servicePort: ${{ parameters.servicePort }}
@@ -116,11 +125,31 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
 
     - id: template-express
-      if: ${{ parameters.useExpress }}
-      name: Add Express Overlay
+      if: ${{ parameters.useExpress && parameters.appLanguage == 'javascript' }}
+      name: Add Express Overlay (JavaScript)
       action: fetch:template
       input:
         url: ./skeleton-express
+        values:
+          name: ${{ parameters.name }}
+          nodeVersion: ${{ parameters.nodeVersion }}
+
+    - id: template-typescript
+      if: ${{ parameters.appLanguage == 'typescript' }}
+      name: Add TypeScript Overlay
+      action: fetch:template
+      input:
+        url: ./skeleton-typescript-base
+        values:
+          name: ${{ parameters.name }}
+          nodeVersion: ${{ parameters.nodeVersion }}
+
+    - id: template-express-typescript
+      if: ${{ parameters.useExpress && parameters.appLanguage == 'typescript' }}
+      name: Add Express Overlay (TypeScript)
+      action: fetch:template
+      input:
+        url: ./skeleton-typescript-express
         values:
           name: ${{ parameters.name }}
           nodeVersion: ${{ parameters.nodeVersion }}
