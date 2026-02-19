@@ -3,7 +3,7 @@ spring:
     name: ${{ values.projectName }}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 {% if values.useActuator %}
 management:

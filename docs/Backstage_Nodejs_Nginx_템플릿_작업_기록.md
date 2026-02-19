@@ -84,7 +84,6 @@ Ingress Host는 최종적으로 다음 형태:
   - namespace
   - deployment
   - service
-  - configmap-web (커스텀 index.html 주입)
 - GitHub Actions CI 워크플로우 (`.github/workflows/ci.yaml`)
 - Backstage catalog entity (`catalog-info.yaml`)
 
@@ -129,8 +128,8 @@ Ingress Host는 최종적으로 다음 형태:
 
 해결:
 
-- `public/index.html` 커스텀 디자인 적용
-- Kubernetes 배포 시 ConfigMap(`configmap-web.yaml`)으로 `index.html`을 `/usr/share/nginx/html/index.html`에 마운트
+- 앱 코드 리소스(`public/index.html`)에 커스텀 디자인 적용
+- 별도 ConfigMap 주입 없이 컨테이너 이미지에 포함된 정적 파일을 직접 서빙
 
 표시 항목:
 
@@ -312,6 +311,24 @@ refusing to allow a GitHub App to create or update workflow
 ### 12.3 브랜치 보호 규칙
 
 - `main`이 PR 병합만 허용되는 경우, 현재 CD 설계(PR 자동 생성)가 정상 동작 방식
+
+---
+
+## 13. 개발 시작 전 주의사항 (/ 리디렉션)
+
+- 초기 템플릿은 앱 코드 기준으로 `/`에서 랜딩 화면을 직접 서빙
+- 필요 시 개발자가 `public/index.html`을 앱 홈으로 자유롭게 교체 가능
+
+## 14. 개발자 가이드 (Node.js) - `/` 페이지 커스터마이징
+
+- 수정 파일: `public/index.html`
+- 이 파일이 `/` 응답 화면이므로 원하는 UI/기능으로 그대로 교체하면 됨
+- Kubernetes 매니페스트 수정은 필요 없음
+- 반영 흐름:
+1. `public/index.html` 수정
+2. `main`으로 push
+3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
+4. PR 병합 후 배포 반영
 
 ### 확인 방법
 

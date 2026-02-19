@@ -22,11 +22,3 @@ spec:
           image: nginx:1.27-alpine
           ports:
             - containerPort: 80
-          volumeMounts:
-            - name: web-content
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
-      volumes:
-        - name: web-content
-          configMap:
-            name: ${{ values.name }}-web
