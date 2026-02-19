@@ -89,8 +89,8 @@ jobs:
         if: steps.manifest_changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: chore(cd): update image tag [skip ci]
-          title: chore(cd): update image tag
+          commit-message: "chore(cd): update image tag [skip ci]"
+          title: "chore(cd): update image tag"
           body: |
             Automated manifest image tag update from CD workflow.
           branch: chore/cd-update-image
