@@ -30,4 +30,4 @@ jobs:
         run: npm run build
 
       - name: Docker Build
-        run: docker build -t app:${{ github.sha }} .
+        run: docker build -t app:{% raw %}${{ github.sha }}{% endraw %} .
