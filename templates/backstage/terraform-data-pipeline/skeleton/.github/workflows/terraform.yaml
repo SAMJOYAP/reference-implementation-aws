@@ -21,6 +21,7 @@ env:
   AWS_REGION: ${{ values.region }}
   TF_VERSION: 1.7.0
 
+{% raw %}
 jobs:
   terraform:
     name: Terraform
@@ -137,3 +138,4 @@ jobs:
           else
             echo "Terraform Plan Succeeded"
           fi
+{% endraw %}

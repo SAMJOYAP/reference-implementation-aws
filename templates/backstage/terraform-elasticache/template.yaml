@@ -141,6 +141,11 @@ spec:
           title: Enable CloudWatch Alarms
           default: false
           description: Creates CPU and memory alarms (requires an existing SNS topic ARN in GitHub secrets)
+        vpcNameFilter:
+          type: string
+          title: VPC Name Tag
+          default: 'eksctl-sesac-ref-impl-cluster/VPC'
+          description: 'Name tag of the VPC where ElastiCache will be deployed. Must contain private subnets spanning at least 2 AZs.'
         region:
           type: string
           title: AWS Region
@@ -190,6 +195,7 @@ spec:
           authEnabled: ${{ parameters.authEnabled }}
           snapshotRetentionDays: ${{ parameters.snapshotRetentionDays }}
           cloudwatchAlarms: ${{ parameters.cloudwatchAlarms }}
+          vpcNameFilter: ${{ parameters.vpcNameFilter }}
           region: ${{ parameters.region }}
           repoUrl: ${{ parameters.repoUrl }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}

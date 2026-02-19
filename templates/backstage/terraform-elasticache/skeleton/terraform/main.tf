@@ -36,19 +36,36 @@ provider "aws" {
   }
 }
 
+# Random suffix prevents resource name collisions on re-deploy
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 locals {
   is_cluster_mode = var.cluster_mode == "enabled"
+
+  # [FIX] Unique prefix prevents parameter group / secret name collisions
+  resource_prefix = "${var.cluster_id}-${random_id.suffix.hex}"
 }
 
-# Default VPC and subnets
-data "aws_vpc" "default" {
-  default = true
+# [FIX] Use the EKS VPC (contains private subnets in multiple AZs)
+# ElastiCache subnet groups require subnets in at least 2 AZs.
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = [var.vpc_name_filter]
+  }
 }
 
-data "aws_subnets" "default" {
+# Private subnets (map-public-ip-on-launch=false) ensures multi-AZ coverage
+data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = [data.aws_vpc.selected.id]
+  }
+  filter {
+    name   = "map-public-ip-on-launch"
+    values = ["false"]
   }
 }
 
@@ -59,26 +76,26 @@ resource "random_password" "auth_token" {
   special = false
 }
 
-# Subnet Group
+# Subnet Group — uses private subnets spanning multiple AZs
 resource "aws_elasticache_subnet_group" "main" {
-  name        = "${var.cluster_id}-subnet-group"
-  subnet_ids  = data.aws_subnets.default.ids
+  name        = "${local.resource_prefix}-subnet-group"
+  subnet_ids  = data.aws_subnets.private.ids
   description = "Subnet group for ${var.cluster_id}"
 
-  tags = { Name = "${var.cluster_id}-subnet-group" }
+  tags = { Name = "${local.resource_prefix}-subnet-group" }
 }
 
 # Security Group
 resource "aws_security_group" "redis" {
   name_prefix = "${var.cluster_id}-"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.selected.id
   description = "Security group for ${var.cluster_id} ElastiCache"
 
   ingress {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = [data.aws_vpc.default.cidr_block]
+    cidr_blocks = [data.aws_vpc.selected.cidr_block]
     description = "Redis access from VPC"
   }
 
@@ -94,12 +111,12 @@ resource "aws_security_group" "redis" {
   }
 }
 
-# Parameter Group
+# Parameter Group — random suffix prevents collision on re-deploy
 resource "aws_elasticache_parameter_group" "main" {
-  name   = "${var.cluster_id}-params"
+  name   = "${local.resource_prefix}-params"
   family = "redis${split(".", var.engine_version)[0]}"
 
-  tags = { Name = "${var.cluster_id}-params" }
+  tags = { Name = "${local.resource_prefix}-params" }
 }
 
 # ─── Cluster Mode Disabled (Replication Group) ──────────────────────────────
@@ -220,13 +237,13 @@ resource "aws_cloudwatch_metric_alarm" "memory_low" {
   ok_actions        = var.sns_topic_arn != "" ? [var.sns_topic_arn] : []
 }
 
-# Store AUTH token in Secrets Manager
+# [FIX] Secrets Manager — random suffix prevents 7-day deletion window collision
 resource "aws_secretsmanager_secret" "auth_token" {
   count       = var.auth_enabled ? 1 : 0
-  name        = "${var.cluster_id}/redis-auth-token"
+  name        = "${local.resource_prefix}/redis-auth-token"
   description = "Redis AUTH token for ${var.cluster_id}"
 
-  tags = { Name = "${var.cluster_id}-redis-auth-token" }
+  tags = { Name = "${local.resource_prefix}-redis-auth-token" }
 }
 
 resource "aws_secretsmanager_secret_version" "auth_token" {

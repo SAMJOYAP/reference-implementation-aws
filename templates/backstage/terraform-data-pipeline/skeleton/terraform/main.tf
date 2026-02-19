@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 
   # Uncomment to use S3 backend for state management
@@ -35,13 +39,27 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Random suffix prevents IAM/Glue/KMS name collisions on re-deploy
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 locals {
-  use_glue = var.pipeline_type == "glue" || var.pipeline_type == "both"
-  use_emr  = var.pipeline_type == "emr" || var.pipeline_type == "both"
+  use_glue   = var.pipeline_type == "glue" || var.pipeline_type == "both"
+  use_emr    = var.pipeline_type == "emr" || var.pipeline_type == "both"
   account_id = data.aws_caller_identity.current.account_id
+
+  # [FIX] Unique prefix for IAM roles, Glue resources, KMS alias
+  # S3 bucket keeps user-controlled suffix (globally unique by convention)
+  resource_prefix = "${var.pipeline_name}-${random_id.suffix.hex}"
+
+  # Glue DB name must be alphanumeric + underscore only
+  glue_db_name = "${replace(var.pipeline_name, "-", "_")}_${random_id.suffix.hex}"
 }
 
 # ─── S3 Data Lake ──────────────────────────────────────────────────────────
+# S3 bucket name uses user-provided suffix — no random_id needed here
+# since users control the suffix and bucket names must be globally unique
 
 resource "aws_s3_bucket" "datalake" {
   bucket = "${var.pipeline_name}-${var.s3_bucket_suffix}"
@@ -79,7 +97,7 @@ resource "aws_s3_bucket_public_access_block" "datalake" {
 # S3 prefixes (folders)
 resource "aws_s3_object" "raw_prefix" {
   bucket  = aws_s3_bucket.datalake.id
-  key     = "${var.s3_prefix}"
+  key     = var.s3_prefix
   content = ""
 }
 
@@ -102,6 +120,8 @@ resource "aws_s3_object" "logs_prefix" {
 }
 
 # ─── KMS Key ───────────────────────────────────────────────────────────────
+# [FIX] KMS alias uses resource_prefix — alias names cannot be reused
+# until the key is fully deleted (which can take time)
 
 resource "aws_kms_key" "pipeline" {
   count               = var.kms_encryption ? 1 : 0
@@ -113,11 +133,12 @@ resource "aws_kms_key" "pipeline" {
 
 resource "aws_kms_alias" "pipeline" {
   count         = var.kms_encryption ? 1 : 0
-  name          = "alias/${var.pipeline_name}-pipeline-key"
+  name          = "alias/${local.resource_prefix}-pipeline-key"
   target_key_id = aws_kms_key.pipeline[0].key_id
 }
 
 # ─── CloudWatch Log Group ──────────────────────────────────────────────────
+# Log group name is stable (no random suffix) — CW log groups can be safely reused
 
 resource "aws_cloudwatch_log_group" "pipeline" {
   count             = var.cloudwatch_logs ? 1 : 0
@@ -128,10 +149,11 @@ resource "aws_cloudwatch_log_group" "pipeline" {
 }
 
 # ─── IAM Role for Glue ─────────────────────────────────────────────────────
+# [FIX] IAM role names use resource_prefix — EntityAlreadyExists on re-deploy
 
 resource "aws_iam_role" "glue" {
   count = local.use_glue ? 1 : 0
-  name  = "${var.pipeline_name}-glue-role"
+  name  = "${local.resource_prefix}-glue-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -142,7 +164,7 @@ resource "aws_iam_role" "glue" {
     }]
   })
 
-  tags = { Name = "${var.pipeline_name}-glue-role" }
+  tags = { Name = "${local.resource_prefix}-glue-role" }
 }
 
 resource "aws_iam_role_policy_attachment" "glue_service" {
@@ -153,7 +175,7 @@ resource "aws_iam_role_policy_attachment" "glue_service" {
 
 resource "aws_iam_role_policy" "glue_s3" {
   count = local.use_glue ? 1 : 0
-  name  = "${var.pipeline_name}-glue-s3-policy"
+  name  = "${local.resource_prefix}-glue-s3-policy"
   role  = aws_iam_role.glue[0].id
 
   policy = jsonencode({
@@ -174,17 +196,18 @@ resource "aws_iam_role_policy" "glue_s3" {
 }
 
 # ─── Glue Data Catalog ─────────────────────────────────────────────────────
+# [FIX] Glue DB/Crawler/Job names use resource_prefix — AlreadyExistsException on re-deploy
 
 resource "aws_glue_catalog_database" "main" {
   count = local.use_glue ? 1 : 0
-  name  = replace(var.pipeline_name, "-", "_")
+  name  = local.glue_db_name
 
   description = "Glue Data Catalog database for ${var.pipeline_name}"
 }
 
 resource "aws_glue_crawler" "main" {
   count         = local.use_glue ? 1 : 0
-  name          = "${var.pipeline_name}-crawler"
+  name          = "${local.resource_prefix}-crawler"
   role          = aws_iam_role.glue[0].arn
   database_name = aws_glue_catalog_database.main[0].name
   description   = "Crawler for ${var.pipeline_name} raw data"
@@ -200,12 +223,12 @@ resource "aws_glue_crawler" "main" {
     update_behavior = "UPDATE_IN_DATABASE"
   }
 
-  tags = { Name = "${var.pipeline_name}-crawler" }
+  tags = { Name = "${local.resource_prefix}-crawler" }
 }
 
 resource "aws_glue_job" "main" {
   count    = local.use_glue ? 1 : 0
-  name     = "${var.pipeline_name}-job"
+  name     = "${local.resource_prefix}-job"
   role_arn = aws_iam_role.glue[0].arn
 
   command {
@@ -216,13 +239,13 @@ resource "aws_glue_job" "main" {
 
   default_arguments = merge(
     {
-      "--job-bookmark-option"    = "job-bookmark-enable"
-      "--SOURCE_BUCKET"          = aws_s3_bucket.datalake.bucket
-      "--SOURCE_PREFIX"          = var.s3_prefix
-      "--OUTPUT_PREFIX"          = "processed/"
-      "--enable-metrics"         = ""
-      "--enable-spark-ui"        = "true"
-      "--spark-event-logs-path"  = "s3://${aws_s3_bucket.datalake.bucket}/logs/spark-ui/"
+      "--job-bookmark-option"   = "job-bookmark-enable"
+      "--SOURCE_BUCKET"         = aws_s3_bucket.datalake.bucket
+      "--SOURCE_PREFIX"         = var.s3_prefix
+      "--OUTPUT_PREFIX"         = "processed/"
+      "--enable-metrics"        = ""
+      "--enable-spark-ui"       = "true"
+      "--spark-event-logs-path" = "s3://${aws_s3_bucket.datalake.bucket}/logs/spark-ui/"
     },
     var.cloudwatch_logs ? {
       "--enable-continuous-cloudwatch-log" = "true"
@@ -238,14 +261,15 @@ resource "aws_glue_job" "main" {
   glue_version = "4.0"
   timeout      = 60
 
-  tags = { Name = "${var.pipeline_name}-job" }
+  tags = { Name = "${local.resource_prefix}-job" }
 }
 
 # ─── IAM Role for EMR ──────────────────────────────────────────────────────
+# [FIX] EMR IAM roles use resource_prefix — EntityAlreadyExists on re-deploy
 
 resource "aws_iam_role" "emr_service" {
   count = local.use_emr ? 1 : 0
-  name  = "${var.pipeline_name}-emr-service-role"
+  name  = "${local.resource_prefix}-emr-service-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -256,7 +280,7 @@ resource "aws_iam_role" "emr_service" {
     }]
   })
 
-  tags = { Name = "${var.pipeline_name}-emr-service-role" }
+  tags = { Name = "${local.resource_prefix}-emr-service-role" }
 }
 
 resource "aws_iam_role_policy_attachment" "emr_service" {
@@ -267,7 +291,7 @@ resource "aws_iam_role_policy_attachment" "emr_service" {
 
 resource "aws_iam_role" "emr_ec2" {
   count = local.use_emr ? 1 : 0
-  name  = "${var.pipeline_name}-emr-ec2-role"
+  name  = "${local.resource_prefix}-emr-ec2-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -278,7 +302,7 @@ resource "aws_iam_role" "emr_ec2" {
     }]
   })
 
-  tags = { Name = "${var.pipeline_name}-emr-ec2-role" }
+  tags = { Name = "${local.resource_prefix}-emr-ec2-role" }
 }
 
 resource "aws_iam_role_policy_attachment" "emr_ec2" {
@@ -289,17 +313,17 @@ resource "aws_iam_role_policy_attachment" "emr_ec2" {
 
 resource "aws_iam_instance_profile" "emr_ec2" {
   count = local.use_emr ? 1 : 0
-  name  = "${var.pipeline_name}-emr-ec2-profile"
+  name  = "${local.resource_prefix}-emr-ec2-profile"
   role  = aws_iam_role.emr_ec2[0].name
 }
 
 # ─── EMR Cluster ───────────────────────────────────────────────────────────
 
 resource "aws_emr_cluster" "main" {
-  count        = local.use_emr ? 1 : 0
-  name         = var.pipeline_name
+  count         = local.use_emr ? 1 : 0
+  name          = var.pipeline_name
   release_label = var.emr_release_label
-  applications = ["Spark", "Hadoop"]
+  applications  = ["Spark", "Hadoop"]
 
   service_role = aws_iam_role.emr_service[0].arn
 
