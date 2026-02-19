@@ -1,0 +1,42 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.name }}-redis
+  description: ElastiCache Redis ${{ values.clusterMode }} mode, ${{ values.nodeType }} in ${{ values.region }}
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  labels:
+    type: elasticache
+    engine: redis
+    region: ${{ values.region }}
+    managed-by: terraform
+spec:
+  type: cache
+  owner: platform-team
+  lifecycle: production
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: Terraform configuration for ElastiCache Redis cluster
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+    backstage.io/techdocs-ref: dir:.
+  labels:
+    infrastructure: terraform
+    cloud: aws
+    resource-type: elasticache
+  links:
+    - url: ${{ values.remoteUrl }}
+      title: Repository
+      icon: github
+    - url: ${{ values.remoteUrl }}/actions
+      title: GitHub Actions
+      icon: github
+spec:
+  type: infrastructure
+  lifecycle: production
+  owner: platform-team
+  dependsOn:
+    - resource:default/${{ values.name }}-redis

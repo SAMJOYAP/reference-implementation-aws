@@ -1,0 +1,267 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-dynamodb
+  title: Create DynamoDB Table with Terraform
+  description: Creates a DynamoDB table with optional GSI, TTL, PITR, Streams, Auto Scaling, and KMS encryption
+  tags:
+    - terraform
+    - aws
+    - dynamodb
+    - database
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the DynamoDB table (lowercase, hyphens only)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+
+    - title: Table Schema
+      required:
+        - hashKey
+      properties:
+        hashKey:
+          type: string
+          title: Partition Key (Hash Key)
+          description: Primary partition key attribute name
+          default: id
+        hashKeyType:
+          type: string
+          title: Partition Key Type
+          default: S
+          enum:
+            - S
+            - N
+            - B
+          enumNames:
+            - 'String (S)'
+            - 'Number (N)'
+            - 'Binary (B)'
+        rangeKey:
+          type: string
+          title: Sort Key (Range Key)
+          description: Optional sort key attribute name (leave blank to omit)
+          default: ''
+        rangeKeyType:
+          type: string
+          title: Sort Key Type
+          default: S
+          enum:
+            - S
+            - N
+            - B
+          enumNames:
+            - 'String (S)'
+            - 'Number (N)'
+            - 'Binary (B)'
+
+    - title: Table Configuration
+      properties:
+        billingMode:
+          type: string
+          title: Billing Mode
+          default: PAY_PER_REQUEST
+          enum:
+            - PAY_PER_REQUEST
+            - PROVISIONED
+          enumNames:
+            - 'On-Demand (PAY_PER_REQUEST)'
+            - 'Provisioned'
+        readCapacity:
+          type: integer
+          title: Read Capacity Units (Provisioned only)
+          default: 5
+          description: Required only when billing mode is PROVISIONED
+        writeCapacity:
+          type: integer
+          title: Write Capacity Units (Provisioned only)
+          default: 5
+          description: Required only when billing mode is PROVISIONED
+        tableClass:
+          type: string
+          title: Table Class
+          default: STANDARD
+          enum:
+            - STANDARD
+            - STANDARD_INFREQUENT_ACCESS
+          enumNames:
+            - 'Standard'
+            - 'Standard Infrequent Access (lower storage cost)'
+        ttlEnabled:
+          type: boolean
+          title: Enable TTL (Time to Live)
+          default: false
+          description: Automatically delete expired items
+        ttlAttribute:
+          type: string
+          title: TTL Attribute Name
+          default: expires_at
+          description: Attribute name used for TTL (must be a Number type in epoch seconds)
+        pitrEnabled:
+          type: boolean
+          title: Enable Point-in-Time Recovery (PITR)
+          default: true
+          description: Allows restoring the table to any point in the last 35 days
+        streamEnabled:
+          type: boolean
+          title: Enable DynamoDB Streams
+          default: false
+          description: Capture item-level changes for event-driven processing
+        streamViewType:
+          type: string
+          title: Stream View Type
+          default: NEW_AND_OLD_IMAGES
+          enum:
+            - NEW_IMAGE
+            - OLD_IMAGE
+            - NEW_AND_OLD_IMAGES
+            - KEYS_ONLY
+          enumNames:
+            - 'New image only'
+            - 'Old image only'
+            - 'New and old images'
+            - 'Keys only'
+        kmsEncryption:
+          type: boolean
+          title: AWS Managed KMS Encryption
+          default: false
+          description: Use AWS managed KMS key (SSE_KMS). Default is AES-256 (AWS owned key).
+        gsiEnabled:
+          type: boolean
+          title: Add Global Secondary Index (GSI)
+          default: false
+          description: Adds one GSI for flexible query patterns
+        gsiName:
+          type: string
+          title: GSI Name
+          default: gsi-by-type
+        gsiHashKey:
+          type: string
+          title: GSI Partition Key
+          default: type
+        gsiHashKeyType:
+          type: string
+          title: GSI Partition Key Type
+          default: S
+          enum:
+            - S
+            - N
+            - B
+          enumNames:
+            - 'String (S)'
+            - 'Number (N)'
+            - 'Binary (B)'
+        autoScaling:
+          type: boolean
+          title: Enable Auto Scaling (Provisioned only)
+          default: false
+          description: Automatically adjusts read/write capacity. Only applies to PROVISIONED billing mode.
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'DynamoDB table "${{ parameters.name }}" managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - dynamodb
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          hashKey: ${{ parameters.hashKey }}
+          hashKeyType: ${{ parameters.hashKeyType }}
+          rangeKey: ${{ parameters.rangeKey }}
+          rangeKeyType: ${{ parameters.rangeKeyType }}
+          billingMode: ${{ parameters.billingMode }}
+          readCapacity: ${{ parameters.readCapacity }}
+          writeCapacity: ${{ parameters.writeCapacity }}
+          tableClass: ${{ parameters.tableClass }}
+          ttlEnabled: ${{ parameters.ttlEnabled }}
+          ttlAttribute: ${{ parameters.ttlAttribute }}
+          pitrEnabled: ${{ parameters.pitrEnabled }}
+          streamEnabled: ${{ parameters.streamEnabled }}
+          streamViewType: ${{ parameters.streamViewType }}
+          kmsEncryption: ${{ parameters.kmsEncryption }}
+          gsiEnabled: ${{ parameters.gsiEnabled }}
+          gsiName: ${{ parameters.gsiName }}
+          gsiHashKey: ${{ parameters.gsiHashKey }}
+          gsiHashKeyType: ${{ parameters.gsiHashKeyType }}
+          autoScaling: ${{ parameters.autoScaling }}
+          region: ${{ parameters.region }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
