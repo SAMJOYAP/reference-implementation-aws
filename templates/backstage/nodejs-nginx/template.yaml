@@ -59,6 +59,8 @@ spec:
           description: If checked, Express server scaffold and dependency are added automatically.
           default: false
     - title: Network Options
+      required:
+        - hostPrefix
       properties:
         servicePort:
           type: number
@@ -74,7 +76,6 @@ spec:
           type: string
           title: Host Prefix
           description: Subdomain prefix. Example `node-test`.
-          default: node-test
           pattern: '^[a-z0-9-]+$'
         baseDomain:
           type: string
