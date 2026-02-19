@@ -176,3 +176,64 @@ Apache 기본 welcome 페이지 대신 커스텀 랜딩 페이지가 보이도�
 - `templates/backstage/springboot-apache/skeleton-ingress/**`
 - `templates/backstage/catalog-info.yaml`
 
+---
+
+## 11. 추가 반영 사항 (최신)
+
+### 11.1 템플릿 명칭 및 설명 정비
+
+- 템플릿 타이틀을 `Java Web App (Apache + Spring Boot + Gradle)` 형태로 정리
+- 생성 README, catalog-info 설명 문구도 동일 톤으로 통일
+
+### 11.2 Repository 공개 범위 선택 옵션 추가
+
+- `template.yaml`에 `repoVisibility` 파라미터 추가
+  - 선택값: `public`, `private`
+  - 기본값: `public`
+- `github:repo:create` 입력에 `repoVisibility` 연결
+
+### 11.3 CD 구성 추가 및 CI/CD 분리
+
+- `.github/workflows/cd.yaml` 추가
+- `ci.yaml`: 빌드/테스트 전용
+- `cd.yaml`: 이미지 빌드/푸시 + 매니페스트 업데이트 전용
+- CD 트리거를 `workflow_run` 기반으로 변경하여 **CI 성공 후 CD 실행**으로 고정
+
+### 11.4 Dockerfile 추가
+
+- Java 이미지 빌드용 Dockerfile 추가:
+  - `templates/backstage/springboot-apache/skeleton-base/Dockerfile`
+
+### 11.5 CD 안정화 보강
+
+- Backstage 렌더링 시 GitHub 표현식 깨짐 방지를 위해 `{% raw %}...{% endraw %}` 적용
+- Git tag가 없을 경우 버전 `1.0.0` 기본값 사용
+- 보호 브랜치 환경 대응을 위해 direct push 대신 PR 생성 방식으로 변경
+
+---
+
+## 12. GitHub Settings 필수 확인 항목
+
+### 12.1 Organization Actions 권한
+
+- `Settings -> Actions -> General`
+- `Workflow permissions`: `Read and write permissions`
+- `Allow GitHub Actions to create and approve pull requests`: 활성화
+
+### 12.2 Secrets/Variables
+
+- `Settings -> Secrets and variables -> Actions`
+- 필수 secret:
+  - `AWS_ROLE_ARN`
+  - `AWS_REGION`
+- Organization secret은 실행 대상 repo를 포함하도록 visibility를 설정
+
+### 12.3 브랜치 보호 규칙
+
+- `main` direct push가 막힌 환경에서는 CD가 생성한 PR을 리뷰/병합해서 반영
+
+### 12.4 IAM Role(ECR) 권한
+
+- 최소 권한에 아래 action 포함 필요:
+  - `ecr:BatchGetImage`
+  - `ecr:DescribeImages`
