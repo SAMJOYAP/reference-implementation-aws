@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${{ values.projectName }}-web
+  namespace: ${{ values.projectName }}
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${{ values.projectName }} | Spring Boot + Apache</title>
+        <style>
+          body { font-family: sans-serif; margin: 0; padding: 24px; background: #f8fafc; color: #0f172a; }
+          .card { max-width: 860px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; }
+          h1 { margin-top: 0; }
+          .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+          .item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+          .label { font-size: 12px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+          code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+        </style>
+      </head>
+      <body>
+        <main class="card">
+          <h1>${{ values.projectName }}</h1>
+          <p><strong>Powered by Apache HTTP Server</strong></p>
+          <div class="grid">
+            <div class="item"><div class="label">Java</div><code>${{ values.javaVersion }}</code></div>
+            <div class="item"><div class="label">Spring Boot</div><code>${{ values.springBootVersion }}</code></div>
+            <div class="item"><div class="label">Gradle</div><code>${{ values.gradleVersion }}</code></div>
+            <div class="item"><div class="label">Packaging</div><code>${{ values.packaging }}</code></div>
+            <div class="item"><div class="label">Spring Web</div><code>${{ values.useSpringWeb }}</code></div>
+            <div class="item"><div class="label">Actuator</div><code>${{ values.useActuator }}</code></div>
+            <div class="item"><div class="label">Lombok</div><code>${{ values.useLombok }}</code></div>
+            <div class="item"><div class="label">Ingress Host</div><code>${{ values.hostPrefix }}.${{ values.baseDomain }}</code></div>
+          </div>
+        </main>
+      </body>
+    </html>

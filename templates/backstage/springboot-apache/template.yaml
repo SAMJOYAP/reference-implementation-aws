@@ -1,0 +1,201 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: springboot-gradle-apache
+  title: Spring Boot + Gradle + Apache
+  description: Creates a Java Spring Boot project with Gradle and Apache runtime manifests.
+  tags:
+    - java
+    - spring-boot
+    - gradle
+    - apache
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Project Information
+      required:
+        - projectName
+        - repoUrl
+      properties:
+        projectName:
+          type: string
+          title: Project Name
+          description: Kubernetes-safe project name
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account.'
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+        groupId:
+          type: string
+          title: Group ID
+          default: com.example
+        artifactId:
+          type: string
+          title: Artifact ID
+          default: app
+    - title: Version and Build Options
+      properties:
+        javaVersion:
+          type: string
+          title: Java Version
+          default: '21'
+          enum:
+            - '17'
+            - '21'
+            - '24'
+        springBootVersion:
+          type: string
+          title: Spring Boot Version
+          default: 3.4.5
+          enum:
+            - 3.2.12
+            - 3.3.6
+            - 3.4.5
+        gradleVersion:
+          type: string
+          title: Gradle Version
+          default: '8.10.2'
+          enum:
+            - '8.8'
+            - '8.10.2'
+            - '8.12.1'
+        packaging:
+          type: string
+          title: Packaging
+          default: jar
+          enum:
+            - jar
+            - war
+        useActuator:
+          type: boolean
+          title: Use Spring Actuator
+          default: true
+        useSpringWeb:
+          type: boolean
+          title: Use Spring Web
+          default: true
+        useLombok:
+          type: boolean
+          title: Use Lombok
+          default: false
+    - title: Network Options
+      required:
+        - hostPrefix
+      properties:
+        servicePort:
+          type: number
+          title: Service Port
+          default: 80
+        enableIngress:
+          type: boolean
+          title: Create Ingress
+          default: true
+        hostPrefix:
+          type: string
+          title: Host Prefix
+          pattern: '^[a-z0-9-]+$'
+        baseDomain:
+          type: string
+          title: Base Domain
+          default: sesac.already11.cloud
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: Spring Boot + Gradle + Apache project generated from Backstage template
+        topics:
+          - spring-boot
+          - gradle
+          - java
+          - apache
+          - backstage
+
+    - id: template-base
+      name: Generate Base Project
+      action: fetch:template
+      input:
+        url: ./skeleton-base
+        values:
+          projectName: ${{ parameters.projectName }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+          javaVersion: ${{ parameters.javaVersion }}
+          springBootVersion: ${{ parameters.springBootVersion }}
+          gradleVersion: ${{ parameters.gradleVersion }}
+          packaging: ${{ parameters.packaging }}
+          useActuator: ${{ parameters.useActuator }}
+          useSpringWeb: ${{ parameters.useSpringWeb }}
+          useLombok: ${{ parameters.useLombok }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+
+    - id: template-ingress
+      if: ${{ parameters.enableIngress }}
+      name: Add Ingress Manifest
+      action: fetch:template
+      input:
+        url: ./skeleton-ingress
+        values:
+          projectName: ${{ parameters.projectName }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Wait for Repository
+      action: roadiehq:utils:sleep
+      input:
+        amount: 5
+
+    - id: create-argocd-app
+      name: Create ArgoCD App
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{ parameters.projectName }}
+        appNamespace: ${{ parameters.projectName }}
+        argoInstance: in-cluster
+        projectName: default
+        repoUrl: ${{ steps['create-repo'].output.remoteUrl }}
+        path: manifests
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
