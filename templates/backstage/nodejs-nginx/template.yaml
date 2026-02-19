@@ -72,7 +72,7 @@ spec:
           type: string
           title: Base Domain
           description: Base domain used to build ingress host.
-          default: sesac.already121.cloud
+          default: sesac.already11.cloud
 
   steps:
     - id: create-repo
