@@ -34,6 +34,14 @@ spec:
               - github.com
             allowedOwners:
               - SAMJOYAP
+        repoVisibility:
+          type: string
+          title: Repository Visibility
+          description: Choose whether to create a public or private GitHub repository.
+          default: public
+          enum:
+            - public
+            - private
         groupId:
           type: string
           title: Group ID
@@ -114,6 +122,7 @@ spec:
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
+        access: ${{ parameters.repoVisibility }}
         description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
         topics:
           - spring-boot
