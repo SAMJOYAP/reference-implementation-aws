@@ -110,6 +110,7 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create pull request for manifest update
+        id: create_pr
         if: steps.manifest_changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
@@ -122,3 +123,10 @@ jobs:
           delete-branch: true
           add-paths: |
             manifests/deployment.yaml
+
+      - name: Enable auto-merge for manifest PR
+        if: steps.manifest_changes.outputs.changed == 'true'
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: {% raw %}${{ steps.create_pr.outputs.pull-request-number }}{% endraw %}
+          merge-method: squash

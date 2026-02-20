@@ -268,6 +268,7 @@ refusing to allow a GitHub App to create or update workflow
   - 선택값: `public`, `private`
   - 기본값: `public`
 - `github:repo:create` 입력에 `repoVisibility` 연결
+- `github:repo:create` 입력에 `allowAutoMerge: true` 추가(생성 repo 자동 설정)
 
 ### 11.2 CI/CD 분리 및 실행 순서 고정
 
@@ -299,6 +300,7 @@ refusing to allow a GitHub App to create or update workflow
 - `Settings -> Actions -> General`
 - `Workflow permissions`: `Read and write permissions`
 - `Allow GitHub Actions to create and approve pull requests`: 활성화
+- (Org 1회 설정 권장) 신규 템플릿 repo에 공통 적용 가능
 
 ### 12.2 Secrets/Variables
 
@@ -311,6 +313,11 @@ refusing to allow a GitHub App to create or update workflow
 ### 12.3 브랜치 보호 규칙
 
 - `main`이 PR 병합만 허용되는 경우, 현재 CD 설계(PR 자동 생성)가 정상 동작 방식
+
+### 12.4 Auto-merge 설정
+
+- 템플릿의 `github:repo:create`에서 `allowAutoMerge: true`를 자동 설정
+- CD에서 생성한 이미지 업데이트 PR에 auto-merge를 자동 활성화
 
 ---
 
@@ -328,7 +335,7 @@ refusing to allow a GitHub App to create or update workflow
 1. `public/index.html` 수정
 2. `main`으로 push
 3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
-4. PR 병합 후 배포 반영
+4. auto-merge로 PR 자동 병합 후 배포 반영
 
 ### 확인 방법
 

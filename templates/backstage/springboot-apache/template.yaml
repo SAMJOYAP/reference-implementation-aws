@@ -123,6 +123,9 @@ spec:
       input:
         repoUrl: ${{ parameters.repoUrl }}
         repoVisibility: ${{ parameters.repoVisibility }}
+        allowAutoMerge: true
+        allowSquashMerge: true
+        deleteBranchOnMerge: true
         description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
         topics:
           - spring-boot

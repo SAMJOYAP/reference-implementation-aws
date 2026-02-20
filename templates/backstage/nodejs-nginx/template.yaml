@@ -98,6 +98,9 @@ spec:
       input:
         repoUrl: ${{ parameters.repoUrl }}
         repoVisibility: ${{ parameters.repoVisibility }}
+        allowAutoMerge: true
+        allowSquashMerge: true
+        deleteBranchOnMerge: true
         description: Node.js nginx web project generated from Backstage template
         topics:
           - backstage

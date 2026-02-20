@@ -38,6 +38,7 @@ CD (`cd.yaml`):
 - ECR 이미지 빌드/푸시
 - `manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
 - 보호 브랜치 환경을 고려해 direct push 대신 PR 자동 생성
+- 생성된 PR에 auto-merge를 설정(필수 체크 통과 시 자동 병합)
 - 필요 시 `workflow_dispatch`로 수동 실행 가능
 
 참고:
@@ -54,7 +55,8 @@ CD (`cd.yaml`):
 5. Docker 이미지 빌드 후 ECR에 push
 6. `manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
 7. 변경 매니페스트로 PR 자동 생성
-8. PR 병합 후 Argo CD가 Git 변경 감지, 클러스터 반영
+8. PR auto-merge 대기(필수 체크 통과 시 자동 병합)
+9. Argo CD가 Git 변경 감지, 클러스터 반영
 
 ---
 
@@ -70,8 +72,9 @@ flowchart TD
     E --> F[Push image to Amazon ECR]
     F --> G[Update manifests/deployment.yaml image tag]
     G --> H[Create PR for manifest update]
-    H --> I[Merge PR to main]
-    I --> J[Argo CD detects Git change and sync]
+    H --> I[Enable auto-merge]
+    I --> I2[Auto-merge PR when checks pass]
+    I2 --> J[Argo CD detects Git change and sync]
     J --> K[Pod rollout with new version]
 ```
 
@@ -114,6 +117,9 @@ flowchart TD
 2. `Workflow permissions`: `Read and write permissions`
 3. `Allow GitHub Actions to create and approve pull requests`: 활성화
 
+참고:
+- `Allow auto-merge`는 템플릿의 `github:repo:create`에서 자동 활성화되도록 구성됨
+
 ---
 
 ## 8. 운영 체크리스트
@@ -125,3 +131,19 @@ flowchart TD
 5. Organization/Repository Actions 권한에서 PR 생성이 허용되어 있는지 확인
 6. 브랜치 보호 규칙(main) 하에서 CD PR 병합 프로세스가 운영되는지 확인
 7. Argo CD Application이 Auto Sync 상태인지 확인
+
+---
+
+## 9. 완전 자동을 위한 Org 레벨 설정
+
+아래 2가지는 Organization에서 1회 설정하면 신규 템플릿 repo에 공통 적용됩니다.
+
+1. `Organization Settings -> Actions -> General`
+   - `Workflow permissions`: `Read and write permissions`
+   - `Allow GitHub Actions to create and approve pull requests`: 활성화
+2. Organization Secrets/Variables
+   - `AWS_ROLE_ARN`, `AWS_REGION`을 org 단위로 등록하고 대상 repo에 접근 허용
+
+템플릿이 자동 처리하는 항목:
+- repo 생성 시 `allowAutoMerge=true` 적용
+- CD에서 이미지 업데이트 PR 생성 후 auto-merge 자동 설정
