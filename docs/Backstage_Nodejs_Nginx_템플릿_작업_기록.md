@@ -287,7 +287,8 @@ refusing to allow a GitHub App to create or update workflow
 
 ### 11.5 보호 브랜치 대응
 
-- CD에서 `manifests/deployment.yaml` 변경을 `main`에 직접 commit/push 하도록 구성
+- 직접 `main` push 방식 제거
+- `peter-evans/create-pull-request`로 `manifests/deployment.yaml` 변경 PR 자동 생성 방식으로 전환
 
 ---
 
@@ -297,7 +298,7 @@ refusing to allow a GitHub App to create or update workflow
 
 - `Settings -> Actions -> General`
 - `Workflow permissions`: `Read and write permissions`
-- 브랜치 보호 사용 시 GitHub Actions의 `main` push 허용 정책 확인
+- `Allow GitHub Actions to create and approve pull requests`: 활성화
 
 ### 12.2 Secrets/Variables
 
@@ -309,7 +310,7 @@ refusing to allow a GitHub App to create or update workflow
 
 ### 12.3 브랜치 보호 규칙
 
-- `main` direct push가 차단된 규칙이면 CD push가 실패하므로 예외 규칙 또는 정책 조정 필요
+- `main`이 PR 병합만 허용되는 경우, 현재 CD 설계(PR 자동 생성)가 정상 동작 방식
 
 ---
 
@@ -326,8 +327,8 @@ refusing to allow a GitHub App to create or update workflow
 - 반영 흐름:
 1. `public/index.html` 수정
 2. `main`으로 push
-3. CI 성공 -> CD 실행 -> `manifests/deployment.yaml` 자동 commit/push
-4. Argo CD 동기화 후 배포 반영
+3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
+4. PR 병합 후 배포 반영
 
 ### 확인 방법
 
