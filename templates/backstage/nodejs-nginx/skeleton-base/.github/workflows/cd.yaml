@@ -85,16 +85,12 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Create pull request for manifest update
+      - name: Commit and push manifest update
         if: steps.manifest_changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "chore(cd): update image tag [skip ci]"
-          title: "chore(cd): update image tag"
-          body: |
-            Automated manifest image tag update from CD workflow.
-          branch: chore/cd-update-image
-          base: main
-          delete-branch: true
-          add-paths: |
-            manifests/deployment.yaml
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifests/deployment.yaml
+          git commit -m "chore(cd): update image tag [skip ci]"
+          git push origin HEAD:main
