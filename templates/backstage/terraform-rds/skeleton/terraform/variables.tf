@@ -63,3 +63,9 @@ variable "secrets_manager" {
   type        = bool
   default     = ${{ values.secretsManager }}
 }
+
+variable "vpc_name_filter" {
+  description = "Name tag of the VPC where RDS will be deployed. Must contain private subnets in at least 2 AZs."
+  type        = string
+  default     = "${{ values.vpcNameFilter }}"
+}

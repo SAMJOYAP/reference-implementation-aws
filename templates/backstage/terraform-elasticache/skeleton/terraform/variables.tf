@@ -93,3 +93,9 @@ variable "sns_topic_arn" {
   type        = string
   default     = ""
 }
+
+variable "vpc_name_filter" {
+  description = "Name tag of the VPC where ElastiCache will be deployed. Must contain private subnets in at least 2 AZs."
+  type        = string
+  default     = "${{ values.vpcNameFilter }}"
+}

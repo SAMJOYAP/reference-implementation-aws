@@ -36,18 +36,25 @@ provider "aws" {
   }
 }
 
+# Random suffix prevents resource name collisions on re-deploy
+resource "random_id" "suffix" {
+  byte_length = 4
+}
+
 locals {
   is_aurora = startswith(var.db_engine, "aurora")
 
   engine_config = {
     "postgres" = {
+      # [FIX] Use major.minor only; patch version is managed by AWS
       version = "15.4"
       family  = "postgres15"
       port    = 5432
       logs    = ["postgresql", "upgrade"]
     }
     "mysql" = {
-      version = "8.0.35"
+      # [FIX] "8.0.35" is not accepted; AWS requires "8.0" for MySQL 8
+      version = "8.0"
       family  = "mysql8.0"
       port    = 3306
       logs    = ["audit", "error", "general", "slowquery"]
@@ -66,21 +73,33 @@ locals {
     }
   }
 
-  db_engine_version   = local.engine_config[var.db_engine].version
-  db_family           = local.engine_config[var.db_engine].family
-  db_port             = local.engine_config[var.db_engine].port
-  cloudwatch_exports  = local.engine_config[var.db_engine].logs
+  db_engine_version  = local.engine_config[var.db_engine].version
+  db_family          = local.engine_config[var.db_engine].family
+  db_port            = local.engine_config[var.db_engine].port
+  cloudwatch_exports = local.engine_config[var.db_engine].logs
+
+  # [FIX] Unique prefix prevents parameter group / secret name collisions
+  resource_prefix = "${var.identifier}-${random_id.suffix.hex}"
 }
 
-# Default VPC and subnets
-data "aws_vpc" "default" {
-  default = true
+# [FIX] Use the EKS VPC (contains private subnets in multiple AZs)
+# instead of the default VPC which may only have subnets in 1 AZ.
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = [var.vpc_name_filter]
+  }
 }
 
-data "aws_subnets" "default" {
+# Private subnets (map-public-ip-on-launch=false) ensures multi-AZ coverage
+data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = [data.aws_vpc.selected.id]
+  }
+  filter {
+    name   = "map-public-ip-on-launch"
+    values = ["false"]
   }
 }
 
@@ -91,26 +110,26 @@ resource "random_password" "db" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-# DB Subnet Group
+# DB Subnet Group — uses private subnets spanning multiple AZs
 resource "aws_db_subnet_group" "main" {
-  name        = "${var.identifier}-subnet-group"
-  subnet_ids  = data.aws_subnets.default.ids
+  name        = "${local.resource_prefix}-subnet-group"
+  subnet_ids  = data.aws_subnets.private.ids
   description = "Subnet group for ${var.identifier}"
 
-  tags = { Name = "${var.identifier}-subnet-group" }
+  tags = { Name = "${local.resource_prefix}-subnet-group" }
 }
 
 # Security Group
 resource "aws_security_group" "rds" {
   name_prefix = "${var.identifier}-"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = data.aws_vpc.selected.id
   description = "Security group for ${var.identifier} RDS"
 
   ingress {
     from_port   = local.db_port
     to_port     = local.db_port
     protocol    = "tcp"
-    cidr_blocks = [data.aws_vpc.default.cidr_block]
+    cidr_blocks = [data.aws_vpc.selected.cidr_block]
     description = "Database access from VPC"
   }
 
@@ -129,10 +148,10 @@ resource "aws_security_group" "rds" {
 
 # DB Parameter Group
 resource "aws_db_parameter_group" "main" {
-  name   = "${var.identifier}-params"
+  name   = "${local.resource_prefix}-params"
   family = local.db_family
 
-  tags = { Name = "${var.identifier}-params" }
+  tags = { Name = "${local.resource_prefix}-params" }
 }
 
 # ─── Standard RDS (postgres / mysql) ───────────────────────────────────────
@@ -176,10 +195,10 @@ resource "aws_db_instance" "main" {
 
 resource "aws_rds_cluster_parameter_group" "aurora" {
   count  = local.is_aurora ? 1 : 0
-  name   = "${var.identifier}-cluster-params"
+  name   = "${local.resource_prefix}-cluster-params"
   family = local.db_family
 
-  tags = { Name = "${var.identifier}-cluster-params" }
+  tags = { Name = "${local.resource_prefix}-cluster-params" }
 }
 
 resource "aws_rds_cluster" "main" {
@@ -245,10 +264,12 @@ resource "aws_rds_cluster_instance" "reader" {
 
 resource "aws_secretsmanager_secret" "db_credentials" {
   count       = var.secrets_manager ? 1 : 0
-  name        = "${var.identifier}/db-credentials"
+  # [FIX] random suffix prevents "ResourceExistsException" on re-deploy
+  # (Secrets Manager has a 7-day deletion recovery window)
+  name        = "${local.resource_prefix}/db-credentials"
   description = "Database credentials for ${var.identifier}"
 
-  tags = { Name = "${var.identifier}-db-credentials" }
+  tags = { Name = "${local.resource_prefix}-db-credentials" }
 }
 
 resource "aws_secretsmanager_secret_version" "db_credentials" {
