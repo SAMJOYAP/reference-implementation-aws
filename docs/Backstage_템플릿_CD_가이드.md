@@ -37,7 +37,7 @@ CD (`cd.yaml`):
 - `CI` 성공 + `main` 브랜치 조건에서만 실행
 - ECR 이미지 빌드/푸시
 - `manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
-- 보호 브랜치 환경을 고려해 direct push 대신 PR 자동 생성
+- 변경된 매니페스트를 `main` 브랜치에 직접 commit/push
 - 필요 시 `workflow_dispatch`로 수동 실행 가능
 
 참고:
@@ -53,8 +53,8 @@ CD (`cd.yaml`):
 4. Git 태그 기반 버전 계산 (태그 없으면 `1.0.0`)
 5. Docker 이미지 빌드 후 ECR에 push
 6. `manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
-7. 변경 매니페스트로 PR 자동 생성
-8. PR 병합 후 Argo CD가 Git 변경 감지, 클러스터 반영
+7. 변경 매니페스트를 `main`에 commit/push
+8. Argo CD가 Git 변경 감지, 클러스터 반영
 
 ---
 
@@ -69,9 +69,8 @@ flowchart TD
     D --> E[Build Docker image]
     E --> F[Push image to Amazon ECR]
     F --> G[Update manifests/deployment.yaml image tag]
-    G --> H[Create PR for manifest update]
-    H --> I[Merge PR to main]
-    I --> J[Argo CD detects Git change and sync]
+    G --> H[Commit and push manifest update to main]
+    H --> J[Argo CD detects Git change and sync]
     J --> K[Pod rollout with new version]
 ```
 
@@ -112,7 +111,7 @@ flowchart TD
 추가 필수 설정:
 1. `Organization Settings -> Actions -> General`
 2. `Workflow permissions`: `Read and write permissions`
-3. `Allow GitHub Actions to create and approve pull requests`: 활성화
+3. 브랜치 보호 사용 시 GitHub Actions가 `main`에 push 가능하도록 예외(또는 정책) 설정
 
 ---
 
@@ -122,6 +121,6 @@ flowchart TD
 2. Secrets(`AWS_ROLE_ARN`, `AWS_REGION`)이 유효한지 확인
 3. IAM Role의 OIDC Trust 정책이 GitHub repo를 허용하는지 확인
 4. IAM Role에 ECR 권한(`BatchGetImage`, `DescribeImages` 포함)이 있는지 확인
-5. Organization/Repository Actions 권한에서 PR 생성이 허용되어 있는지 확인
-6. 브랜치 보호 규칙(main) 하에서 CD PR 병합 프로세스가 운영되는지 확인
+5. Organization/Repository Actions 권한에서 workflow write 권한이 설정되어 있는지 확인
+6. 브랜치 보호 규칙(main)이 CD의 direct push를 차단하지 않는지 확인
 7. Argo CD Application이 Auto Sync 상태인지 확인

@@ -205,7 +205,7 @@ Ingress host 형식:
 
 - Backstage 렌더링 시 GitHub 표현식 깨짐 방지를 위해 `{% raw %}...{% endraw %}` 적용
 - Git tag가 없을 경우 버전 `1.0.0` 기본값 사용
-- 보호 브랜치 환경 대응을 위해 direct push 대신 PR 생성 방식으로 변경
+- CD에서 `manifests/deployment.yaml` 변경을 `main`에 직접 commit/push 하도록 구성
 
 ---
 
@@ -215,7 +215,7 @@ Ingress host 형식:
 
 - `Settings -> Actions -> General`
 - `Workflow permissions`: `Read and write permissions`
-- `Allow GitHub Actions to create and approve pull requests`: 활성화
+- 브랜치 보호 사용 시 GitHub Actions의 `main` push 허용 정책 확인
 
 ### 12.2 Secrets/Variables
 
@@ -227,7 +227,7 @@ Ingress host 형식:
 
 ### 12.3 브랜치 보호 규칙
 
-- `main` direct push가 막힌 환경에서는 CD가 생성한 PR을 리뷰/병합해서 반영
+- `main` direct push가 차단된 규칙이면 CD push가 실패하므로 예외 규칙 또는 정책 조정 필요
 
 ### 12.4 IAM Role(ECR) 권한
 
@@ -250,5 +250,5 @@ Ingress host 형식:
 - 반영 흐름:
 1. `src/main/resources/static/index.html` 수정
 2. `main`으로 push
-3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
-4. PR 병합 후 배포 반영
+3. CI 성공 -> CD 실행 -> `manifests/deployment.yaml` 자동 commit/push
+4. Argo CD 동기화 후 배포 반영
