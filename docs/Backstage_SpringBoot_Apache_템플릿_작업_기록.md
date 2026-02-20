@@ -188,6 +188,7 @@ Ingress host 형식:
   - 선택값: `public`, `private`
   - 기본값: `public`
 - `github:repo:create` 입력에 `repoVisibility` 연결
+- `github:repo:create` 입력에 `allowAutoMerge: true` 추가(생성 repo 자동 설정)
 
 ### 11.3 CD 구성 추가 및 CI/CD 분리
 
@@ -216,6 +217,7 @@ Ingress host 형식:
 - `Settings -> Actions -> General`
 - `Workflow permissions`: `Read and write permissions`
 - `Allow GitHub Actions to create and approve pull requests`: 활성화
+- (Org 1회 설정 권장) 신규 템플릿 repo에 공통 적용 가능
 
 ### 12.2 Secrets/Variables
 
@@ -235,6 +237,11 @@ Ingress host 형식:
   - `ecr:BatchGetImage`
   - `ecr:DescribeImages`
 
+### 12.5 Auto-merge 설정
+
+- 템플릿의 `github:repo:create`에서 `allowAutoMerge: true`를 자동 설정
+- CD에서 생성한 이미지 업데이트 PR에 auto-merge를 자동 활성화
+
 ---
 
 ## 13. 개발 시작 전 주의사항 (/ 리디렉션)
@@ -251,4 +258,4 @@ Ingress host 형식:
 1. `src/main/resources/static/index.html` 수정
 2. `main`으로 push
 3. CI 성공 -> CD 실행 -> 이미지 업데이트 PR 생성
-4. PR 병합 후 배포 반영
+4. auto-merge로 PR 자동 병합 후 배포 반영
