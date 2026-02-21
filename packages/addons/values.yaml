@@ -208,6 +208,7 @@ backstage-kr:
       path: '/'
       annotations:
         cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+        external-dns.alpha.kubernetes.io/hostname: 'backstage-kr.{{ .metadata.annotations.domain }}'
     backstage:
       appConfig:
         catalog:
