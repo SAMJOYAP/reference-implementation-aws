@@ -18,5 +18,5 @@ metadata:
       icon: github
 spec:
   type: service
-  owner: guests
+  owner: platform-team
   lifecycle: experimental
