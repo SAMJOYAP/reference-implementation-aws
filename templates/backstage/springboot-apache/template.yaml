@@ -10,7 +10,7 @@ metadata:
     - gradle
     - apache
 spec:
-  owner: guests
+  owner: platform-team
   type: service
   parameters:
     - title: Project Information
