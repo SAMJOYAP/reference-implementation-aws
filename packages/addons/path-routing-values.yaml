@@ -41,8 +41,6 @@ backstage-kr:
   additionalResources:
   - path: "packages/backstage-kr/manifests"
     type: "path"
-  - path: "packages/backstage-kr/path-routing"
-    type: "path"
 
 argo-workflows:
   enabled: true

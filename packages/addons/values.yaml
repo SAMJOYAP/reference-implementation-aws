@@ -204,12 +204,10 @@ backstage-kr:
   - "values-kr.yaml"
   valuesObject:
     ingress:
-      host: '{{ if eq .metadata.labels.path_routing "false" }}backstage-kr.{{ .metadata.annotations.domain }}{{ else }}{{ .metadata.annotations.domain }}{{ end }}'
-      path: '{{ if eq .metadata.labels.path_routing "true" }}/kr(/|$)(.*){{ else }}/{{ end }}'
+      host: 'backstage-kr.{{ .metadata.annotations.domain }}'
+      path: '/'
       annotations:
-        cert-manager.io/cluster-issuer: '{{ if eq .metadata.labels.path_routing "false" }}letsencrypt-prod{{ end }}'
-        nginx.ingress.kubernetes.io/use-regex: '{{ if eq .metadata.labels.path_routing "true" }}true{{ else }}false{{ end }}'
-        nginx.ingress.kubernetes.io/rewrite-target: '{{ if eq .metadata.labels.path_routing "true" }}/$2{{ end }}'
+        cert-manager.io/cluster-issuer: 'letsencrypt-prod'
     backstage:
       appConfig:
         catalog:
@@ -218,7 +216,7 @@ backstage-kr:
               target: '{{ .metadata.annotations.addons_repo_url }}/blob/{{ .metadata.annotations.addons_repo_revision }}/templates/backstage/catalog-info.yaml'
       extraEnvVars:
       - name: BACKSTAGE_FRONTEND_URL
-        value: 'https://{{ if eq .metadata.labels.path_routing "false" }}backstage-kr.{{ .metadata.annotations.domain }}{{ else }}{{ .metadata.annotations.domain }}/kr/{{ end }}'
+        value: 'https://backstage-kr.{{ .metadata.annotations.domain }}'
       - name: KEYCLOAK_NAME_METADATA
         value: 'https://{{ if eq .metadata.labels.path_routing "false" }}keycloak.{{ .metadata.annotations.domain }}{{ else }}{{ .metadata.annotations.domain }}/keycloak{{ end }}/realms/cnoe/.well-known/openid-configuration'
       - name: ARGO_WORKFLOWS_URL

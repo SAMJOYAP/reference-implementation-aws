@@ -44,7 +44,6 @@
 - `backstage-kr` 추가
 - 경로:
   - `packages/backstage-kr/manifests`
-  - `packages/backstage-kr/path-routing`
 
 ### 3) Argo CD AppProject 대상 네임스페이스 허용
 
@@ -121,56 +120,29 @@ kubectl get externalsecret -n backstage-kr
 
 ### 4) 접속 확인
 
-- non path-routing: `https://backstage-kr.<domain>`
-- path-routing: `https://<domain>/kr/`
+- `https://backstage-kr.<domain>`
 
 ### 5) 경로 라우팅 동작 정리
 
-path-routing(`path_routing=true`) 기준:
+`backstage-kr`는 경로(`/kr`) 방식 대신 **서브도메인 방식**으로 고정 운영한다.
 
-- `https://<domain>/` -> 기존 `backstage` 인스턴스
-- `https://<domain>/kr/` -> 신규 `backstage-kr` 인스턴스
+- `https://<domain>/` -> 기존 `backstage`
+- `https://backstage-kr.<domain>` -> 신규 `backstage-kr`
 
-Ingress는 경로가 더 구체적인 규칙(`/kr/`)을 우선 매칭하므로, `/kr/` 요청은 `backstage-kr`로 라우팅된다.
-또한 path-routing 시 ingress rewrite(`/kr/...` -> `/...`)를 적용해 Backstage 앱 내부 404를 방지한다.
+적용된 ingress 핵심:
 
-적용된 ingress 예외처리(핵심):
-
-- `path: /kr(/|$)(.*)`
-- `nginx.ingress.kubernetes.io/use-regex: "true"`
-- `nginx.ingress.kubernetes.io/rewrite-target: "/$2"`
-
-주의:
-- 현재 backstage chart 스키마에서는 `ingress.pathType` 필드를 허용하지 않으므로 사용하지 않는다.
+- `host: backstage-kr.<domain>`
+- `path: /`
+- `cert-manager.io/cluster-issuer: letsencrypt-prod`
 
 설정 위치:
 
 - 주 설정: `packages/addons/values.yaml` (`backstage-kr.valuesObject.ingress`)
-- path-routing 오버레이(`packages/addons/path-routing-values.yaml`)에서는 `backstage-kr`의 추가 리소스 경로만 유지
-
-## /kr/ 404 트러블슈팅
-
-증상:
-- `https://<domain>/kr/` 접속 시 404
-
-원인:
-- `/kr/` 경로가 앱으로 전달될 때 rewrite가 없거나 정규식 path 매칭이 누락된 경우
-
-확인 명령:
-
-```bash
-kubectl get ingress -n backstage-kr -o yaml | egrep -n "path:|pathType:|rewrite-target|use-regex"
-kubectl get applications -n argocd | grep backstage-kr
-kubectl get pods -n backstage-kr
-```
-
-정상 기대값:
-- ingress path가 `/kr(/|$)(.*)`
-- `rewrite-target: /$2` 존재
+- path-routing 오버레이(`packages/addons/path-routing-values.yaml`)에서는 `backstage-kr`의 추가 manifest 경로만 유지
 
 ## 운영 주의사항
 
-1. Keycloak redirect URI에 path-routing URL(`https://<domain>/kr/*`)이 허용되어야 한다.
+1. Keycloak redirect URI에 `https://backstage-kr.<domain>/*`가 허용되어야 한다.
 2. 커스텀 이미지 태그는 `packages/backstage/values-kr.yaml`에서 관리한다.
 3. 기존 `backstage` 제거는 신규 인스턴스 안정화 후 별도 변경으로 진행한다.
 
