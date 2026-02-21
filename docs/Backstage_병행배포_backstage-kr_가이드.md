@@ -137,9 +137,11 @@ Ingress는 경로가 더 구체적인 규칙(`/kr/`)을 우선 매칭하므로, 
 적용된 ingress 예외처리(핵심):
 
 - `path: /kr(/|$)(.*)`
-- `pathType: ImplementationSpecific`
 - `nginx.ingress.kubernetes.io/use-regex: "true"`
 - `nginx.ingress.kubernetes.io/rewrite-target: "/$2"`
+
+주의:
+- 현재 backstage chart 스키마에서는 `ingress.pathType` 필드를 허용하지 않으므로 사용하지 않는다.
 
 설정 위치:
 
