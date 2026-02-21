@@ -134,6 +134,7 @@ kubectl get externalsecret -n backstage-kr
 - `host: backstage-kr.<domain>`
 - `path: /`
 - `cert-manager.io/cluster-issuer: letsencrypt-prod`
+- `external-dns.alpha.kubernetes.io/hostname: backstage-kr.<domain>`
 
 설정 위치:
 
