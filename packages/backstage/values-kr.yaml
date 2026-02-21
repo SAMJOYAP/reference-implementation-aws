@@ -8,6 +8,6 @@ backstage:
     organization:
       name: ALREADY11
   image:
-    registry: ghcr.io
-    repository: SAMJOYAP/backstage-app
-    tag: 95fc92721dbf7950a4b96fb5dd3c9beb15a779a5
+    registry: 710232982381.dkr.ecr.ap-northeast-2.amazonaws.com
+    repository: backstage-app
+    tag: 1.0.0
