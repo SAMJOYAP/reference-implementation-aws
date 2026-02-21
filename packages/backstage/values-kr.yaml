@@ -1,0 +1,14 @@
+ingress:
+  tls:
+    secretName: "backstage-kr-server-tls"
+backstage:
+  appConfig:
+    app:
+      title: ALREADY11 Backstage
+    organization:
+      name: ALREADY11
+  image:
+    # Update to your custom Backstage image/tag if needed.
+    registry: ghcr.io
+    repository: cnoe-io/backstage-app
+    tag: 135c0cb26f3e004a27a11edb6a4779035aff9805
