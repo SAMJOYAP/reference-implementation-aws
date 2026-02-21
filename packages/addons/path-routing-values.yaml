@@ -38,6 +38,13 @@ backstage:
 
 backstage-kr:
   enabled: true
+  valuesObject:
+    ingress:
+      path: "/kr(/|$)(.*)"
+      pathType: "ImplementationSpecific"
+      annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        nginx.ingress.kubernetes.io/rewrite-target: "/$2"
   additionalResources:
   - path: "packages/backstage-kr/manifests"
     type: "path"

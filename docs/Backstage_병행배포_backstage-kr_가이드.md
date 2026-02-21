@@ -132,6 +132,34 @@ path-routing(`path_routing=true`) 기준:
 - `https://<domain>/kr/` -> 신규 `backstage-kr` 인스턴스
 
 Ingress는 경로가 더 구체적인 규칙(`/kr/`)을 우선 매칭하므로, `/kr/` 요청은 `backstage-kr`로 라우팅된다.
+또한 path-routing 시 ingress rewrite(`/kr/...` -> `/...`)를 적용해 Backstage 앱 내부 404를 방지한다.
+
+적용된 ingress 예외처리(핵심):
+
+- `path: /kr(/|$)(.*)`
+- `pathType: ImplementationSpecific`
+- `nginx.ingress.kubernetes.io/use-regex: "true"`
+- `nginx.ingress.kubernetes.io/rewrite-target: "/$2"`
+
+## /kr/ 404 트러블슈팅
+
+증상:
+- `https://<domain>/kr/` 접속 시 404
+
+원인:
+- `/kr/` 경로가 앱으로 전달될 때 rewrite가 없거나 정규식 path 매칭이 누락된 경우
+
+확인 명령:
+
+```bash
+kubectl get ingress -n backstage-kr -o yaml | egrep -n "path:|pathType:|rewrite-target|use-regex"
+kubectl get applications -n argocd | grep backstage-kr
+kubectl get pods -n backstage-kr
+```
+
+정상 기대값:
+- ingress path가 `/kr(/|$)(.*)`
+- `rewrite-target: /$2` 존재
 
 ## 운영 주의사항
 
