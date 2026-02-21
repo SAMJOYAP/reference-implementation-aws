@@ -141,6 +141,11 @@ Ingress는 경로가 더 구체적인 규칙(`/kr/`)을 우선 매칭하므로, 
 - `nginx.ingress.kubernetes.io/use-regex: "true"`
 - `nginx.ingress.kubernetes.io/rewrite-target: "/$2"`
 
+설정 위치:
+
+- 주 설정: `packages/addons/values.yaml` (`backstage-kr.valuesObject.ingress`)
+- path-routing 오버레이(`packages/addons/path-routing-values.yaml`)에서는 `backstage-kr`의 추가 리소스 경로만 유지
+
 ## /kr/ 404 트러블슈팅
 
 증상:

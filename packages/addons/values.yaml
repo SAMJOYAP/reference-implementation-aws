@@ -205,9 +205,12 @@ backstage-kr:
   valuesObject:
     ingress:
       host: '{{ if eq .metadata.labels.path_routing "false" }}backstage-kr.{{ .metadata.annotations.domain }}{{ else }}{{ .metadata.annotations.domain }}{{ end }}'
-      path: '/{{ if eq .metadata.labels.path_routing "true" }}kr/{{ end }}'
+      path: '{{ if eq .metadata.labels.path_routing "true" }}/kr(/|$)(.*){{ else }}/{{ end }}'
+      pathType: '{{ if eq .metadata.labels.path_routing "true" }}ImplementationSpecific{{ else }}Prefix{{ end }}'
       annotations:
         cert-manager.io/cluster-issuer: '{{ if eq .metadata.labels.path_routing "false" }}letsencrypt-prod{{ end }}'
+        nginx.ingress.kubernetes.io/use-regex: '{{ if eq .metadata.labels.path_routing "true" }}true{{ else }}false{{ end }}'
+        nginx.ingress.kubernetes.io/rewrite-target: '{{ if eq .metadata.labels.path_routing "true" }}/$2{{ end }}'
     backstage:
       appConfig:
         catalog:
