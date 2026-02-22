@@ -14,6 +14,9 @@ configs:
   cm:
     accounts.backstage: apiKey
     accounts.backstage.enabled: "true"
+    # Reconcile frequently so newly created GitOps paths are picked up without manual Refresh.
+    timeout.reconciliation: 30s
+    timeout.reconciliation.jitter: 5s
     application.resourceTrackingMethod: annotation
     resource.exclusions: |
       - kinds:
