@@ -298,4 +298,8 @@ jobs:
           PR_NUMBER: {% raw %}${{ steps.create_pr.outputs.pull-request-number }}{% endraw %}
         shell: bash
         run: |
-          gh pr merge "$PR_NUMBER" --auto --squash --repo "$GITOPS_REPO"
+          if ! gh pr merge "$PR_NUMBER" --auto --squash --repo "$GITOPS_REPO"; then
+            echo "Auto-merge is unavailable. Trying immediate squash merge."
+            gh pr merge "$PR_NUMBER" --squash --repo "$GITOPS_REPO" || \
+              echo "Merge is still pending. Please merge PR #$PR_NUMBER manually."
+          fi
