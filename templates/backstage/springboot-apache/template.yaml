@@ -17,7 +17,6 @@ spec:
       required:
         - projectName
         - repoUrl
-        - gitopsRepoUrl
       properties:
         projectName:
           type: string
@@ -43,16 +42,6 @@ spec:
           enum:
             - public
             - private
-        gitopsRepoUrl:
-          title: GitOps Repository
-          type: string
-          description: Existing GitOps repository where deployment manifests are managed.
-          ui:field: RepoUrlPicker
-          ui:options:
-            allowedHosts:
-              - github.com
-            allowedOwners:
-              - SAMJOYAP
         groupId:
           type: string
           title: Group ID
@@ -167,8 +156,8 @@ spec:
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
-          gitopsOwner: ${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('owner') }}
-          gitopsRepo: ${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('repo') }}
+          gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          gitopsRepo: gitops
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
@@ -199,12 +188,12 @@ spec:
       name: Create ArgoCD App
       action: cnoe:create-argocd-app
       input:
-        appName: ${{ parameters.projectName }}
-        appNamespace: ${{ parameters.projectName }}
+        appName: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+        appNamespace: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
         argoInstance: in-cluster
         projectName: default
-        repoUrl: https://github.com/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('repo') }}
-        path: apps/${{ parameters.projectName }}
+        repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
+        path: apps/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: register
       name: Register in Catalog

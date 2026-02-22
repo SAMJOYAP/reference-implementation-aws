@@ -19,7 +19,7 @@ jobs:
       AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
       ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
       GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
-      APP_NAME: ${{ values.name }}
+      APP_NAME: ${{ values.repo }}
       APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
     steps:
       - name: Checkout
