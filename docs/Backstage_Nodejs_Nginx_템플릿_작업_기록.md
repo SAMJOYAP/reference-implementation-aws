@@ -348,3 +348,45 @@ refusing to allow a GitHub App to create or update workflow
 1. 템플릿 실행 로그에서 `Initialize Repository` 성공 여부 확인
 2. 생성된 저장소에 `.github/workflows/ci.yaml` 존재 확인
 3. GitHub Actions 탭에서 CI 워크플로우 실행 확인
+
+---
+
+## 15. 최신 업데이트 (2026-02-22)
+
+### 15.1 GitOps 단일 소스 원칙으로 정리
+
+- 앱 코드 repo에서 Kubernetes 매니페스트를 제거함
+  - 제거 대상:
+    - `skeleton-base/manifests/*`
+    - `skeleton-ingress/manifests/ingress.yaml`
+- 결과:
+  - 앱 코드 repo는 애플리케이션 소스/CI-CD만 포함
+  - 배포 매니페스트는 GitOps repo `apps/<app-name>` 경로만 사용
+
+### 15.2 템플릿 실행 순서 보강
+
+- `catalog:register`를 `create-argocd-app`보다 먼저 실행하도록 조정
+- 목적:
+  - Catalog Location 중복(409) 발생 시 Argo CD 앱 생성 전 중단
+  - 불필요한 리소스 생성 방지
+
+### 15.3 Argo CD 생성 입력값 정상화
+
+- `create-argocd-app` 입력을 하드코딩/파생값 대신 템플릿 파라미터 기준으로 통일
+  - `appName`, `appNamespace`: `${{ parameters.name }}`
+  - `repoUrl`: `${{ parameters.gitopsRepoUrl }}`
+  - `path`: `apps/${{ parameters.name }}`
+
+### 15.4 생성되는 CD 워크플로우 Preflight 추가
+
+- 파일: `templates/backstage/nodejs-nginx/skeleton-base/.github/workflows/cd.yaml`
+- `preflight` job 추가 후 `publish-ecr`에 `needs: preflight` 적용
+- 검증 항목:
+  - 필수 시크릿 존재: `AWS_REGION`, `AWS_ROLE_ARN`, `GITOPS_REPO_TOKEN`
+  - GitOps repo 접근 가능 여부(`git ls-remote`)
+  - `apps/<app-name>` 경로 상태(bootstrap/update 모드) 확인
+
+### 15.5 로컬 검증 스크립트 정리
+
+- `scripts/lint.mjs`에서 `manifests/deployment.yaml` 필수 체크 제거
+- README의 `kubectl apply -f manifests/` 절차를 제거하고 GitOps 기반 운영으로 설명 통일

@@ -197,3 +197,35 @@ CD 업데이트 대상:
   - `80a66f2`: `backstage-kr`를 values 기반 + external manifests 구조로 정리
 - `backstage-app`
   - `3e34b7c`: `backstage-kr` 이미지 업데이트를 GitOps values 파일 갱신 방식으로 전환
+
+---
+
+## 11. 최신 업데이트 (2026-02-22)
+
+### 11.1 앱 코드 repo 매니페스트 제거 (Node/Java)
+
+- 템플릿 스켈레톤에서 `manifests/*`를 제거하여 중복 소스 문제 해소
+- 현재 원칙:
+  - 앱 코드 repo: 애플리케이션 소스 + CI/CD
+  - GitOps repo: `apps/<app-name>/...` 배포 선언 전담
+
+### 11.2 템플릿 단계 순서 조정
+
+- `catalog:register`를 `create-argocd-app`보다 앞에 배치
+- 효과:
+  - catalog location 중복 시 Argo CD 앱 생성 전에 실패
+  - 중간 상태 리소스 생성 최소화
+
+### 11.3 Argo CD 생성 입력값 정합성 수정
+
+- `create-argocd-app`의 repo/path 입력을 `gitopsRepoUrl` + `app-name` 기준으로 통일
+- 하드코딩된 `owner/gitops` 또는 `repo` 파생 입력 제거
+
+### 11.4 생성 앱 CD에 Preflight 게이트 도입
+
+- Node/Java 템플릿에서 생성되는 `cd.yaml`에 `preflight` job 추가
+- `publish-ecr`는 `needs: preflight`로 보호
+- 사전 검증 항목:
+  - 필수 시크릿 존재 여부
+  - GitOps repo 접근 가능 여부
+  - `apps/<app-name>` 경로 상태 점검

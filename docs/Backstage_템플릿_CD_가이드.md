@@ -162,3 +162,38 @@ flowchart TD
 템플릿이 자동 처리하는 항목:
 - repo 생성 시 `allowAutoMerge=true` 적용
 - CD에서 이미지 업데이트 PR 생성 후 auto-merge 자동 설정
+
+---
+
+## 10. 최신 업데이트 (2026-02-22)
+
+### 10.1 Preflight 단계 추가
+
+Node/Java 템플릿에서 생성되는 `cd.yaml`에 `preflight` job이 추가되었습니다.
+
+- 실행 순서:
+  1. `preflight`
+  2. `publish-ecr` (`needs: preflight`)
+- 검증 내용:
+  - 필수 시크릿 존재: `AWS_REGION`, `AWS_ROLE_ARN`, `GITOPS_REPO_TOKEN`
+  - GitOps repo 접근 가능 여부
+  - `apps/<app-name>` 경로 상태 확인
+
+### 10.2 앱 코드 repo에서 매니페스트 제거
+
+- Node/Java 템플릿 생성 결과에서 `manifests/*`는 더 이상 포함되지 않습니다.
+- 배포 선언은 GitOps repo `apps/<app-name>`로만 관리합니다.
+
+### 10.3 템플릿 실행 순서 보강
+
+- `catalog:register` 후 `create-argocd-app` 실행으로 조정
+- catalog 중복 충돌 시 Argo CD 생성 전 중단하도록 변경
+
+### 10.4 운영 체크 포인트 추가
+
+신규 생성 프로젝트 확인 시 아래 순서를 권장합니다.
+
+1. Backstage 템플릿 실행 성공(특히 `register` 단계)
+2. 생성된 앱 repo의 `cd.yaml`에서 `preflight` 통과 확인
+3. GitOps repo에 `apps/<app-name>` 생성/갱신 PR 확인
+4. PR auto-merge 후 Argo CD 동기화 상태 확인
