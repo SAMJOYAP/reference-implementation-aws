@@ -197,3 +197,15 @@ Node/Java 템플릿에서 생성되는 `cd.yaml`에 `preflight` job이 추가되
 2. 생성된 앱 repo의 `cd.yaml`에서 `preflight` 통과 확인
 3. GitOps repo에 `apps/<app-name>` 생성/갱신 PR 확인
 4. PR auto-merge 후 Argo CD 동기화 상태 확인
+
+### 10.5 템플릿 실패 시 자동 정리(보상 삭제) 추가
+
+- `cnoe:create-argocd-app` 백엔드 액션이 실패 시 cleanup을 수행하도록 확장
+- 정리 대상(가능한 경우):
+  1. Argo CD Application 삭제
+  2. 생성된 GitHub Repository 삭제
+  3. ECR Repository 삭제(`aws` CLI 사용 가능 시)
+- Node/Java 템플릿에서 cleanup 파라미터를 함께 전달하도록 반영
+- 참고:
+  - GitHub 삭제는 Backstage의 GitHub integration token이 설정된 경우에만 수행됨
+  - ECR 삭제는 실행 컨테이너의 AWS 권한/CLI 존재 여부에 따라 best-effort로 수행됨

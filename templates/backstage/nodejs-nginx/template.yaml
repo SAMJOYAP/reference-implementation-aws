@@ -199,6 +199,10 @@ spec:
         projectName: default
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.name }}
+        cleanupOnFailure: true
+        cleanupGithubOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+        cleanupGithubRepo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+        cleanupEcrRepository: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
   output:
     links:
