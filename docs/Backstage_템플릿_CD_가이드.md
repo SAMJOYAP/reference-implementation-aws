@@ -10,6 +10,10 @@
 - Git commit/push (GitOps 반영)
 - Argo CD 자동 동기화로 클러스터 반영
 
+적용 기준:
+- `reference-implementation-aws` `main` (`36e264d` 이후)
+- CD는 CI 성공 완료(`workflow_run`) 이후에만 실행
+
 ---
 
 ## 2. 적용된 워크플로우 파일
@@ -39,7 +43,6 @@ CD (`cd.yaml`):
 - GitOps repo `apps/<app-name>/manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
 - 보호 브랜치 환경을 고려해 GitOps repo에 PR 자동 생성
 - 생성된 PR에 auto-merge를 설정(필수 체크 통과 시 자동 병합)
-- 필요 시 `workflow_dispatch`로 수동 실행 가능
 
 참고:
 - Backstage 템플릿 렌더링 시 GitHub 표현식이 깨지지 않도록 `{% raw %}...{% endraw %}`를 사용합니다.
@@ -50,7 +53,7 @@ CD (`cd.yaml`):
 
 1. 개발자가 `main` 브랜치에 코드 push
 2. GitHub Actions `CI` 실행 및 성공
-3. `workflow_run`으로 `CD` 실행
+3. `workflow_run` 이벤트로 `CD` 실행
 4. Git 태그 기반 버전 계산 (태그 없으면 `1.0.0`)
 5. Docker 이미지 빌드 후 ECR에 push
 6. GitOps repo `apps/<app-name>/manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
@@ -80,7 +83,7 @@ flowchart TD
 
 ---
 
-## 6. 필수 GitHub Secrets
+## 6. 필수 GitHub Secrets/권한
 
 각 생성 저장소에 아래 값이 있어야 CD가 성공합니다.
 
@@ -92,6 +95,13 @@ flowchart TD
 - `AWS_ROLE_ARN`: GitHub OIDC로 AssumeRole 할 AWS IAM Role ARN
 - `AWS_REGION`: ECR 리전 (예: `ap-northeast-2`)
 - `GITOPS_REPO_TOKEN`: GitOps repo에 PR 생성/auto-merge 가능한 토큰(App token 또는 PAT)
+
+추가 필수 권한:
+- Repo `Settings -> Actions -> General`
+  - `Workflow permissions: Read and write permissions`
+  - `Allow GitHub Actions to create and approve pull requests`
+- GitOps 대상 repo `Settings -> General`
+  - `Allow auto-merge` 활성화
 
 권장:
 - 민감정보가 아닌 `AWS_REGION`은 Organization Variables로 관리해도 무방
@@ -136,15 +146,18 @@ flowchart TD
 
 ---
 
-## 9. 완전 자동을 위한 Org 레벨 설정
+## 9. 완전 자동을 위한 설정 체크리스트
 
-아래 2가지는 Organization에서 1회 설정하면 신규 템플릿 repo에 공통 적용됩니다.
+아래 항목은 Organization 또는 Repository 단위로 충족되어야 합니다.
 
 1. `Organization Settings -> Actions -> General`
    - `Workflow permissions`: `Read and write permissions`
    - `Allow GitHub Actions to create and approve pull requests`: 활성화
 2. Organization Secrets/Variables
    - `AWS_ROLE_ARN`, `AWS_REGION`을 org 단위로 등록하고 대상 repo에 접근 허용
+3. GitOps repo 설정
+   - `Allow auto-merge` 활성화
+   - (Ruleset 사용 시) CD 토큰 주체의 bypass 권한 허용
 
 템플릿이 자동 처리하는 항목:
 - repo 생성 시 `allowAutoMerge=true` 적용

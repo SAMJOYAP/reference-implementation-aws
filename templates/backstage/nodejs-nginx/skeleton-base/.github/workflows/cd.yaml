@@ -4,12 +4,12 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
   publish-ecr:
     name: Build and Push to ECR
-    if: (github.event_name == 'workflow_dispatch') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.actor.login != 'github-actions[bot]')
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,103 +85,103 @@ jobs:
 
           if [ ! -f "$APP_DIR/kustomization.yaml" ]; then
             cat > "$APP_DIR/kustomization.yaml" <<YAML
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - manifests/namespace.yaml
-  - manifests/service.yaml
-  - manifests/deployment.yaml
-  - manifests/ingress.yaml
-YAML
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - manifests/namespace.yaml
+            - manifests/service.yaml
+            - manifests/deployment.yaml
+            - manifests/ingress.yaml
+          YAML
           fi
 
           if [ ! -f "$MANIFEST_DIR/namespace.yaml" ]; then
             cat > "$MANIFEST_DIR/namespace.yaml" <<YAML
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: $APP_NAME
-  labels:
-    app.kubernetes.io/name: $APP_NAME
-YAML
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          YAML
           fi
 
           if [ ! -f "$MANIFEST_DIR/service.yaml" ]; then
             cat > "$MANIFEST_DIR/service.yaml" <<YAML
-apiVersion: v1
-kind: Service
-metadata:
-  name: $APP_NAME
-  namespace: $APP_NAME
-  labels:
-    app.kubernetes.io/name: $APP_NAME
-spec:
-  selector:
-    app.kubernetes.io/name: $APP_NAME
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
-      protocol: TCP
-  type: ClusterIP
-YAML
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          spec:
+            selector:
+              app.kubernetes.io/name: $APP_NAME
+            ports:
+              - name: http
+                port: 80
+                targetPort: 80
+                protocol: TCP
+            type: ClusterIP
+          YAML
           fi
 
           if [ ! -f "$MANIFEST_DIR/deployment.yaml" ]; then
             cat > "$MANIFEST_DIR/deployment.yaml" <<YAML
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: $APP_NAME
-  namespace: $APP_NAME
-  labels:
-    app.kubernetes.io/name: $APP_NAME
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: $APP_NAME
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: $APP_NAME
-    spec:
-      containers:
-        - name: app
-          image: nginx:1.27-alpine
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 80
-YAML
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: $APP_NAME
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: $APP_NAME
+              spec:
+                containers:
+                  - name: app
+                    image: nginx:1.27-alpine
+                    imagePullPolicy: IfNotPresent
+                    ports:
+                      - containerPort: 80
+          YAML
           fi
 
           if [ ! -f "$MANIFEST_DIR/ingress.yaml" ]; then
             cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: $APP_NAME
-  namespace: $APP_NAME
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: $APP_HOST
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: $APP_NAME
-                port:
-                  number: 80
-  tls:
-    - hosts:
-        - $APP_HOST
-      secretName: $APP_NAME-tls
-YAML
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          spec:
+            ingressClassName: nginx
+            rules:
+              - host: $APP_HOST
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: $APP_NAME
+                          port:
+                            number: 80
+            tls:
+              - hosts:
+                  - $APP_HOST
+                secretName: $APP_NAME-tls
+          YAML
           fi
 
       - name: Update GitOps deployment image tag

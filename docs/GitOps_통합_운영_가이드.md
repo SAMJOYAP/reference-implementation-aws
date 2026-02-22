@@ -54,6 +54,8 @@
 2. Argo CD App source를 앱 코드 repo가 아니라 GitOps repo(`apps/<app-name>`)로 변경
 3. CD가 GitOps repo의 `apps/<app-name>`를 자동 생성/갱신
 4. CD가 GitOps repo에 PR 생성 + auto-merge 수행
+5. CD 실행 순서 고정: `CI(main) 성공 -> CD(workflow_run)`
+6. 템플릿 CD heredoc 들여쓰기 문제 수정(신규 생성 repo YAML 파싱 오류 방지)
 
 ---
 
@@ -169,14 +171,29 @@ CD 업데이트 대상:
 2. GitOps repo에서 auto-merge 가능 상태 확인
 3. Ruleset/Branch protection이 CD PR auto-merge를 차단하지 않는지 확인
 4. Argo CD source가 GitOps repo 경로를 바라보는지 확인
+5. Ruleset이 없다면 bypass 설정은 불필요(기능 차단 원인은 보통 auto-merge/권한 설정)
 
 ---
 
 ## 9. 운영 시 확인 순서
 
 1. 앱 코드 repo에서 main 머지
-2. CD에서 ECR 이미지 생성 확인
-3. GitOps repo에 `chore(cd): update ... image tag` PR 생성 확인
-4. PR auto-merge 완료 확인
-5. Argo CD sync 후 신규 이미지 배포 확인
-6. 도메인 접속 시 커스텀 랜딩 페이지 노출 확인
+2. CI 성공 확인
+3. CD에서 ECR 이미지 생성 확인
+4. GitOps repo에 `chore(cd): update ... image tag` PR 생성 확인
+5. PR auto-merge 완료 확인
+6. Argo CD sync 후 신규 이미지 배포 확인
+7. 도메인 접속 시 커스텀 랜딩 페이지 노출 확인
+
+---
+
+## 10. 참고 커밋 (운영 전환 기준)
+
+- `reference-implementation-aws`
+  - `36e264d`: CD를 CI 성공 이후에만 실행하도록 변경
+  - `0fae281`: Node/Java 템플릿 CD YAML heredoc 파싱 오류 수정
+  - `2085110`: `backstage-kr` ApplicationSet source를 GitOps repo 기반으로 전환
+- `gitops`
+  - `80a66f2`: `backstage-kr`를 values 기반 + external manifests 구조로 정리
+- `backstage-app`
+  - `3e34b7c`: `backstage-kr` 이미지 업데이트를 GitOps values 파일 갱신 방식으로 전환
