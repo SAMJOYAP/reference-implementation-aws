@@ -65,10 +65,10 @@ spec:
             - 'US West (Oregon)'
             - 'Asia Pacific (Seoul)'
             - 'EU (Ireland)'
-        vpcName:
+        eksClusterName:
           type: string
-          title: VPC Name Tag
-          description: 'Name tag of the VPC to deploy into (e.g. eksctl-sesac-ref-impl-cluster/VPC). Subnets with Public/Private in the name will be used.'
+          title: EKS Cluster Name (Optional)
+          description: 'EKS cluster whose VPC will be used. Leave blank to use the default cluster configured in GitHub Actions (vars.EKS_CLUSTER_NAME).'
 
   steps:
     - id: create-repo
@@ -92,7 +92,7 @@ spec:
           name: ${{ parameters.name }}
           instanceType: ${{ parameters.instanceType }}
           region: ${{ parameters.region }}
-          vpcName: ${{ parameters.vpcName }}
+          eksClusterName: ${{ parameters.eksClusterName | default("") }}
           repoUrl: ${{ parameters.repoUrl }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}

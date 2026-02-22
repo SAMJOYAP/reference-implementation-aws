@@ -32,15 +32,20 @@ provider "aws" {
   }
 }
 
-# Look up VPC by Name tag
-data "aws_vpc" "selected" {
-  filter {
-    name   = "tag:Name"
-    values = [var.vpc_name]
-  }
+# Use user-provided cluster name if set, otherwise fall back to the default
+# set via TF_VAR_eks_cluster_name GitHub Actions variable (vars.EKS_CLUSTER_NAME)
+locals {
+  effective_cluster_name = var.eks_cluster_name_override != "" ? var.eks_cluster_name_override : var.eks_cluster_name
 }
 
-# Look up subnets within the VPC (public/private by name pattern)
+data "aws_eks_cluster" "main" {
+  name = local.effective_cluster_name
+}
+
+data "aws_vpc" "selected" {
+  id = data.aws_eks_cluster.main.vpc_config[0].vpc_id
+}
+
 data "aws_subnets" "selected" {
   filter {
     name   = "vpc-id"
