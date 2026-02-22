@@ -262,11 +262,12 @@ jobs:
         id: manifest_changes
         shell: bash
         run: |
-          if git -C gitops-repo diff --quiet -- "apps/$APP_NAME"; then
+          if [ -z "$(git -C gitops-repo status --porcelain -- "apps/$APP_NAME")" ]; then
             echo "No manifest changes detected."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          git -C gitops-repo status --short -- "apps/$APP_NAME"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Create pull request in GitOps repo
