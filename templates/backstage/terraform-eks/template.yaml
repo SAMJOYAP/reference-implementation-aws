@@ -1,0 +1,202 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-eks
+  title: Create EKS Cluster with Terraform
+  description: Creates an EKS cluster with VPC (public/private subnets, NAT GW), managed node group, core addons (EBS CSI, VPC CNI, CoreDNS, kube-proxy), and IRSA roles for AWS Load Balancer Controller and Fluent Bit
+  tags:
+    - terraform
+    - aws
+    - eks
+    - kubernetes
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: EKS cluster name (lowercase, hyphens only)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+
+    - title: Cluster Configuration
+      properties:
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+        clusterVersion:
+          type: string
+          title: Kubernetes Version
+          default: '1.34'
+          enum:
+            - '1.34'
+            - '1.33'
+            - '1.32'
+          enumNames:
+            - 'Kubernetes 1.34 (Latest)'
+            - 'Kubernetes 1.33'
+            - 'Kubernetes 1.32'
+        environment:
+          type: string
+          title: Environment
+          default: dev
+          enum:
+            - dev
+            - staging
+            - prod
+          enumNames:
+            - 'Development'
+            - 'Staging'
+            - 'Production'
+        vpcCidr:
+          type: string
+          title: VPC CIDR Block
+          default: '10.0.0.0/16'
+          description: CIDR block for the VPC. 3 public and 3 private subnets will be created across AZs.
+
+    - title: Node Group Configuration
+      properties:
+        nodeInstanceType:
+          type: string
+          title: Node Instance Type
+          default: m5.large
+          enum:
+            - t3.medium
+            - t3.large
+            - m5.large
+            - m5.xlarge
+            - m5.2xlarge
+            - c5.large
+            - c5.xlarge
+          enumNames:
+            - 't3.medium (2 vCPU, 4 GB) - Dev/Test'
+            - 't3.large (2 vCPU, 8 GB)'
+            - 'm5.large (2 vCPU, 8 GB) - Recommended'
+            - 'm5.xlarge (4 vCPU, 16 GB)'
+            - 'm5.2xlarge (8 vCPU, 32 GB)'
+            - 'c5.large (2 vCPU, 4 GB) - Compute Optimized'
+            - 'c5.xlarge (4 vCPU, 8 GB) - Compute Optimized'
+        nodeDesiredSize:
+          type: integer
+          title: Desired Node Count
+          default: 3
+          enum: [2, 3, 4, 5, 6]
+          enumNames:
+            - '2 nodes'
+            - '3 nodes'
+            - '4 nodes'
+            - '5 nodes'
+            - '6 nodes'
+        nodeMinSize:
+          type: integer
+          title: Minimum Node Count
+          default: 2
+          enum: [1, 2, 3]
+          enumNames:
+            - '1 node'
+            - '2 nodes'
+            - '3 nodes'
+        nodeMaxSize:
+          type: integer
+          title: Maximum Node Count
+          default: 5
+          enum: [3, 4, 5, 6, 8, 10]
+          enumNames:
+            - '3 nodes'
+            - '4 nodes'
+            - '5 nodes'
+            - '6 nodes'
+            - '8 nodes'
+            - '10 nodes'
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'EKS cluster "${{ parameters.name }}" managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - eks
+          - kubernetes
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          region: ${{ parameters.region }}
+          clusterVersion: ${{ parameters.clusterVersion }}
+          environment: ${{ parameters.environment }}
+          vpcCidr: ${{ parameters.vpcCidr }}
+          nodeInstanceType: ${{ parameters.nodeInstanceType }}
+          nodeDesiredSize: ${{ parameters.nodeDesiredSize }}
+          nodeMinSize: ${{ parameters.nodeMinSize }}
+          nodeMaxSize: ${{ parameters.nodeMaxSize }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions

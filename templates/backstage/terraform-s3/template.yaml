@@ -1,0 +1,185 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: terraform-s3
+  title: Create S3 Bucket with Terraform
+  description: Creates an S3 bucket with optional versioning, KMS encryption, lifecycle rules, access logging, and static website hosting
+  tags:
+    - terraform
+    - aws
+    - s3
+    - storage
+    - infrastructure
+spec:
+  owner: platform-team
+  type: infrastructure
+  parameters:
+    - title: Configuration
+      required:
+        - name
+        - repoUrl
+      properties:
+        name:
+          type: string
+          description: Name of the S3 bucket (lowercase, hyphens only — a random suffix will be appended for global uniqueness)
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
+
+    - title: S3 Configuration
+      properties:
+        region:
+          type: string
+          title: AWS Region
+          default: ap-northeast-2
+          enum:
+            - us-east-1
+            - us-west-2
+            - ap-northeast-2
+            - eu-west-1
+          enumNames:
+            - 'US East (N. Virginia)'
+            - 'US West (Oregon)'
+            - 'Asia Pacific (Seoul)'
+            - 'EU (Ireland)'
+        versioning:
+          type: boolean
+          title: Enable Versioning
+          default: true
+          description: Keep multiple versions of objects to protect against accidental deletion
+        kmsEncryption:
+          type: boolean
+          title: Enable KMS Encryption (SSE-KMS)
+          default: false
+          description: Use AWS KMS key for encryption. Default uses SSE-S3 (AES-256, no extra cost).
+        forceDestroy:
+          type: boolean
+          title: Allow Force Destroy
+          default: false
+          description: Allow Terraform to delete the bucket even if it contains objects (useful for dev/test)
+
+    - title: Lifecycle & Logging
+      properties:
+        lifecycleEnabled:
+          type: boolean
+          title: Enable Lifecycle Rules
+          default: false
+          description: Automatically transition or expire objects to reduce storage costs
+        lifecycleIaDays:
+          type: integer
+          title: Transition to Standard-IA (days)
+          default: 0
+          enum: [0, 30, 60, 90]
+          enumNames:
+            - 'Skip'
+            - 'After 30 days'
+            - 'After 60 days'
+            - 'After 90 days'
+          description: Move objects to Standard-Infrequent Access after N days (0 = skip)
+        lifecycleGlacierDays:
+          type: integer
+          title: Transition to Glacier (days)
+          default: 0
+          enum: [0, 90, 180, 365]
+          enumNames:
+            - 'Skip'
+            - 'After 90 days'
+            - 'After 180 days'
+            - 'After 365 days'
+          description: Archive objects to Glacier after N days (0 = skip)
+        lifecycleExpireDays:
+          type: integer
+          title: Expire Objects (days)
+          default: 0
+          enum: [0, 365, 730, 1825]
+          enumNames:
+            - 'Never'
+            - 'After 1 year'
+            - 'After 2 years'
+            - 'After 5 years'
+          description: Permanently delete objects after N days (0 = never)
+        accessLogging:
+          type: boolean
+          title: Enable Access Logging
+          default: false
+          description: Log all requests to a separate S3 bucket for auditing
+        websiteEnabled:
+          type: boolean
+          title: Enable Static Website Hosting
+          default: false
+          description: Serve static content directly from the S3 bucket
+
+  steps:
+    - id: create-repo
+      name: Create Repository
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: 'S3 bucket "${{ parameters.name }}" managed by Terraform'
+        topics:
+          - terraform
+          - aws
+          - s3
+          - backstage
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          region: ${{ parameters.region }}
+          versioning: ${{ parameters.versioning }}
+          kmsEncryption: ${{ parameters.kmsEncryption }}
+          forceDestroy: ${{ parameters.forceDestroy }}
+          lifecycleEnabled: ${{ parameters.lifecycleEnabled }}
+          lifecycleIaDays: ${{ parameters.lifecycleIaDays }}
+          lifecycleGlacierDays: ${{ parameters.lifecycleGlacierDays }}
+          lifecycleExpireDays: ${{ parameters.lifecycleExpireDays }}
+          accessLogging: ${{ parameters.accessLogging }}
+          websiteEnabled: ${{ parameters.websiteEnabled }}
+          repoUrl: ${{ parameters.repoUrl }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+
+    - id: init-repo
+      name: Initialize Repository
+      action: github:repo:push
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+
+    - id: wait
+      name: Waiting for the repo to be ready
+      action: "roadiehq:utils:sleep"
+      input:
+        amount: 5
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Open in GitHub
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}
+      - title: View GitHub Actions
+        icon: github
+        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
