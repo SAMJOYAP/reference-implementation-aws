@@ -16,8 +16,8 @@ variable "aws_region" {
   default     = "${{ values.region }}"
 }
 
-variable "vpc_id" {
-  description = "VPC ID to deploy the EC2 instance into"
+variable "vpc_name" {
+  description = "Name tag of the VPC to deploy the EC2 instance into"
   type        = string
-  default     = "${{ values.vpcId }}"
+  default     = "${{ values.vpcName }}"
 }
