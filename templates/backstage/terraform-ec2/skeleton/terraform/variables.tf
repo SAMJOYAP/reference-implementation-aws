@@ -16,13 +16,8 @@ variable "aws_region" {
   default     = "${{ values.region }}"
 }
 
-variable "eks_cluster_name" {
-  description = "Default EKS cluster name from GitHub Actions vars.EKS_CLUSTER_NAME (TF_VAR_eks_cluster_name)"
+variable "vpc_name" {
+  description = "Name tag of the VPC to deploy into"
   type        = string
-}
-
-variable "eks_cluster_name_override" {
-  description = "Optional EKS cluster name entered in Backstage. If empty, eks_cluster_name is used."
-  type        = string
-  default     = "${{ values.eksClusterName }}"
+  default     = "${{ values.vpcName }}"
 }
