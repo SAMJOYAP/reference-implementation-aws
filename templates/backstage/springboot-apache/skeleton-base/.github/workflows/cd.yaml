@@ -198,7 +198,7 @@ jobs:
             ports:
               - name: http
                 port: 80
-                targetPort: 80
+                targetPort: 8080
                 protocol: TCP
             type: ClusterIP
           YAML
@@ -228,9 +228,13 @@ jobs:
                     image: httpd:2.4-alpine
                     imagePullPolicy: IfNotPresent
                     ports:
-                      - containerPort: 80
+                      - containerPort: 8080
           YAML
           fi
+
+          # Keep Spring Boot traffic wiring consistent for both new and existing apps.
+          sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
+          sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
 
           if [ ! -f "$MANIFEST_DIR/ingress.yaml" ]; then
             cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
