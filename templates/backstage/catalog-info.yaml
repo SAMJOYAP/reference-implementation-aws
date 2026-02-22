@@ -16,6 +16,8 @@ spec:
     - ./terraform-dynamodb/template.yaml
     - ./terraform-elasticache/template.yaml
     - ./terraform-data-pipeline/template.yaml
+    - ./terraform-s3/template.yaml
+    - ./terraform-eks/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location
