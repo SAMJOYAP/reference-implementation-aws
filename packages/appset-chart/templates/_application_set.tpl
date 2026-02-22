@@ -6,12 +6,16 @@ Template to generate additional resources configuration
 {{- $chartConfig := .chartConfig -}}
 {{- $valueFiles := .valueFiles -}}
 {{- $values := .values -}}
+{{- $repoURL := default $values.repoURLGit $chartConfig.repoURLGit -}}
+{{- $repoRevision := default $values.repoURLGitRevision $chartConfig.repoURLGitRevision -}}
+{{- $repoBasePath := default $values.repoURLGitBasePath $chartConfig.repoURLGitBasePath -}}
+{{- $resourcePathName := default $chartName $chartConfig.additionalResourcesPathName -}}
 
 {{- range $resource := $chartConfig.additionalResources }}
-- repoURL: {{ $values.repoURLGit | squote }}
-  targetRevision: {{ $values.repoURLGitRevision | squote }}
+- repoURL: {{ $repoURL | squote }}
+  targetRevision: {{ $repoRevision | squote }}
   path: {{- if eq $resource.type "manifests" }}
-    '{{ $values.repoURLGitBasePath }}/{{ $chartName }}{{ if $values.useValuesFilePrefix }}{{ $values.valuesFilePrefix }}{{ end }}/{{ $resource.manifestPath }}'
+    '{{ $repoBasePath }}/{{ $resourcePathName }}{{ if $values.useValuesFilePrefix }}{{ $values.valuesFilePrefix }}{{ end }}/{{ $resource.manifestPath }}'
   {{- else }}
     {{ $resource.path | squote }}
   {{- end}}
@@ -26,6 +30,7 @@ Template to generate additional resources configuration
     valueFiles:
     {{- include "application-sets.valueFiles" (dict
       "nameNormalize" $chartName
+      "chartConfig" $chartConfig
       "valueFiles" $valueFiles
       "values" $values
       "chartType" $resource.type) | nindent 6 }}
@@ -39,21 +44,23 @@ Define the values path for reusability
 */}}
 {{- define "application-sets.valueFiles" -}}
 {{- $nameNormalize := .nameNormalize -}}
-{{- $chartConfig := .chartConfig -}}
+{{- $chartConfig := .chartConfig | default dict -}}
 {{- $valueFiles := .valueFiles -}}
 {{- $chartType := .chartType -}}
 {{- $values := .values -}}
+{{- $repoBasePath := default $values.repoURLGitBasePath $chartConfig.repoURLGitBasePath -}}
+{{- $valuesPathName := default $nameNormalize $chartConfig.valuesPathName -}}
 {{- with .valueFiles }}
 {{- range . }}
-- $values/{{ $values.repoURLGitBasePath }}/{{ $nameNormalize }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}{{ . }}{{ end }}
+- $values/{{ $repoBasePath }}/{{ $valuesPathName }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}{{ . }}{{ end }}
 {{- if $values.useValuesFilePrefix }}
-- $values/{{ $values.repoURLGitBasePath }}/{{ if $values.useValuesFilePrefix }}{{ $values.valuesFilePrefix }}{{ end }}{{ . }}/{{ $nameNormalize }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}values.yaml{{ end }}
+- $values/{{ $repoBasePath }}/{{ if $values.useValuesFilePrefix }}{{ $values.valuesFilePrefix }}{{ end }}{{ . }}/{{ $valuesPathName }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}values.yaml{{ end }}
 {{- end }}
 {{- end }}
 {{- end }}
 {{- with $chartConfig.valueFiles }}
 {{- range . }}
-- $values/{{ $values.repoURLGitBasePath }}/{{ $nameNormalize }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}{{ . }}{{ end }}
+- $values/{{ $repoBasePath }}/{{ $valuesPathName }}{{ if $chartType }}/{{ $chartType }}{{ end }}/{{ if $chartConfig.valuesFileName }}{{ $chartConfig.valuesFileName }}{{ else }}{{ . }}{{ end }}
 {{- end }}
 {{- end }}
 {{- end }}

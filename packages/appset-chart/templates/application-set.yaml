@@ -18,6 +18,8 @@
 {{- if and (kindIs "map" $chartConfig) (hasKey $chartConfig "enabled") }}
 {{- if eq (toString $chartConfig.enabled) "true" }}
 {{- $nameNormalize := printf "%s" $chartName | replace "_" "-" | trunc 63 | trimSuffix "-"  -}}
+{{- $chartRepoURLGit := default $repoURLGit $chartConfig.repoURLGit -}}
+{{- $chartRepoURLGitRevision := default $repoURLGitRevision $chartConfig.repoURLGitRevision -}}
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -49,7 +51,7 @@ spec:
   {{- if $chartConfig.gitMatrix }}
   {{ include "application-sets.git-matrix" (dict
   "chartName" $nameNormalize "chartConfig" $chartConfig
-  "repoURLGit" $repoURLGit "repoURLGitRevision" $repoURLGitRevision
+  "repoURLGit" $chartRepoURLGit "repoURLGitRevision" $chartRepoURLGitRevision
   "selectors" $globalSelectors "useSelectors" $useSelectors
     ) | nindent 2 }}
   {{- else }}
@@ -108,7 +110,7 @@ spec:
       {{- end }}
       labels:
         {{- if $chartConfig.path }}
-        addonVersion: {{ $repoURLGitRevision | squote }}
+        addonVersion: {{ $chartRepoURLGitRevision | squote }}
         {{- else }}
         addonVersion: '{{`{{.values.addonChartVersion }}`}}'
         {{- end }}
@@ -124,8 +126,8 @@ spec:
     spec:
       project: default
       sources:
-      - repoURL: {{ $repoURLGit | squote}}
-        targetRevision: {{ $repoURLGitRevision | squote }}
+      - repoURL: {{ $chartRepoURLGit | squote}}
+        targetRevision: {{ $chartRepoURLGitRevision | squote }}
         ref: values
         {{- if eq (toString $chartConfig.enableAckPodIdentity) "true" }}
         {{ include "application-sets.pod-identity" (dict
@@ -134,9 +136,9 @@ spec:
           "chartConfig" $chartConfig "values" $values ) | nindent 6 }}
         {{- end }}
         {{- if $chartConfig.path }}
-      - repoURL: {{ $repoURLGit | squote }}
+      - repoURL: {{ $chartRepoURLGit | squote }}
         path: {{$chartConfig.path | squote }}
-        targetRevision: {{ $repoURLGitRevision | squote }}
+        targetRevision: {{ $chartRepoURLGitRevision | squote }}
         {{- else }}
       - repoURL: '{{`{{ .values.addonChartRepository }}`}}'
         chart: '{{`{{ .values.chart }}`}}'

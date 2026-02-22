@@ -39,8 +39,9 @@ backstage:
 backstage-kr:
   enabled: true
   additionalResources:
-  - path: "packages/backstage-kr/manifests"
-    type: "path"
+  - path: true
+    manifestPath: "manifests"
+    type: "manifests"
 
 argo-workflows:
   enabled: true

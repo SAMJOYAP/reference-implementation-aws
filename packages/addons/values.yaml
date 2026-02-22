@@ -198,6 +198,11 @@ backstage-kr:
   chartName: backstage
   namespace: backstage-kr
   releaseName: backstage-kr
+  repoURLGit: "https://github.com/SAMJOYAP/gitops"
+  repoURLGitRevision: "main"
+  repoURLGitBasePath: "apps"
+  valuesPathName: "backstage-kr"
+  additionalResourcesPathName: "backstage-kr"
   defaultVersion: "2.6.0"
   chartRepository: "https://backstage.github.io/charts"
   valueFiles:
@@ -227,8 +232,8 @@ backstage-kr:
       - name: ARGO_CD_URL
         value: 'https://{{ if eq .metadata.labels.path_routing "false" }}argocd.{{ .metadata.annotations.domain }}{{ else }}{{ .metadata.annotations.domain }}/argocd{{ end }}'
   additionalResources:
-  - path: "packages/backstage-kr/manifests"
-    type: "path"
+  - manifestPath: "manifests"
+    type: "manifests"
   selector:
     matchExpressions:
       - key: environment

@@ -35,7 +35,8 @@
 
 역할:
 - Kubernetes 배포 매니페스트 단일 소스
-- CD가 `deployment.yaml`의 `image:`만 갱신
+- Node/Java CD는 `deployment.yaml`의 `image:` 갱신
+- Backstage CD는 `values-kr.yaml`의 `backstage.image.*` 갱신
 - PR + auto-merge로 변경 반영
 
 ---
@@ -65,12 +66,15 @@
 1. 기존 `reference-implementation-aws/packages/backstage/values-kr.yaml` 직접 수정 방식 제거
 2. `SAMJOYAP/gitops/apps/backstage-kr` 갱신 방식으로 전환
 3. GitOps repo에 PR 생성 + auto-merge 수행
+4. `packages/appset-chart`에서 `backstage-kr`만 GitOps repo/경로를 사용하도록 차트별 source override 지원
+   - `repoURLGit`, `repoURLGitRevision`, `repoURLGitBasePath`
+   - `valuesPathName`, `additionalResourcesPathName`
 
 ---
 
 ## 5. GitOps 디렉터리 표준
 
-앱 1개당 아래 구조를 사용합니다.
+Node/Java 표준:
 
 ```text
 apps/<app-name>/
@@ -82,8 +86,21 @@ apps/<app-name>/
     ingress.yaml
 ```
 
+Backstage-kr 표준:
+
+```text
+apps/backstage-kr/
+  values.yaml
+  values-kr.yaml
+  kustomization.yaml
+  manifests/
+    external-secrets.yaml
+    k8s-config-secret.yaml
+```
+
 CD 업데이트 대상:
 - `apps/<app-name>/manifests/deployment.yaml`의 `image:` 필드
+- `apps/backstage-kr/values-kr.yaml`의 `backstage.image.registry/repository/tag`
 
 ---
 

@@ -26,3 +26,9 @@ gradle bootRun
 ```bash
 kubectl apply -f manifests/
 ```
+
+## CD (GitOps)
+- CD workflow: `.github/workflows/cd.yaml`
+- Deploy source repo: `${{ values.gitopsOwner }}/${{ values.gitopsRepo }}`
+- Target manifest: `apps/${{ values.projectName }}/manifests/deployment.yaml`
+- Required secrets: `AWS_ROLE_ARN`, `AWS_REGION`, `GITOPS_REPO_TOKEN`
