@@ -4,7 +4,6 @@ const requiredPaths = [
   "public/index.html",
   "Dockerfile",
   "nginx/default.conf",
-  "manifests/deployment.yaml",
 ];
 
 const missing = requiredPaths.filter((p) => !existsSync(p));

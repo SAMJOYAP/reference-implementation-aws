@@ -26,9 +26,7 @@ docker run --rm -p 8080:80 ${{ values.name }}:dev
 ```
 
 ## Kubernetes
-```bash
-kubectl apply -f manifests/
-```
+Deployment manifests are managed in the GitOps repository.
 
 ## CI
 GitHub Actions workflow is included at `.github/workflows/ci.yaml`.

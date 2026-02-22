@@ -23,9 +23,7 @@ gradle bootRun
 ```
 
 ## Kubernetes
-```bash
-kubectl apply -f manifests/
-```
+Deployment manifests are managed in the GitOps repository.
 
 ## CD (GitOps)
 - CD workflow: `.github/workflows/cd.yaml`
