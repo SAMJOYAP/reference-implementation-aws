@@ -122,6 +122,19 @@ jobs:
           APP_DIR="gitops-repo/apps/$APP_NAME"
           MANIFEST_DIR="$APP_DIR/manifests"
           mkdir -p "$MANIFEST_DIR"
+          ROOT_KUSTOMIZATION="gitops-repo/apps/kustomization.yaml"
+
+          if [ ! -f "$ROOT_KUSTOMIZATION" ]; then
+            cat > "$ROOT_KUSTOMIZATION" <<YAML
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+          YAML
+          fi
+
+          if ! grep -Eq "^[[:space:]]*-[[:space:]]+$APP_NAME$" "$ROOT_KUSTOMIZATION"; then
+            echo "  - $APP_NAME" >> "$ROOT_KUSTOMIZATION"
+          fi
 
           if [ ! -f "$APP_DIR/kustomization.yaml" ]; then
             cat > "$APP_DIR/kustomization.yaml" <<YAML
