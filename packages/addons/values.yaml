@@ -198,6 +198,12 @@ backstage-kr:
   chartName: backstage
   namespace: backstage-kr
   releaseName: backstage-kr
+  ignoreDifferences:
+    - kind: Namespace
+      name: backstage-kr
+      jsonPointers:
+        - /metadata/annotations
+        - /metadata/labels
   repoURLGit: "https://github.com/SAMJOYAP/gitops"
   repoURLGitRevision: "main"
   repoURLGitBasePath: "apps"
