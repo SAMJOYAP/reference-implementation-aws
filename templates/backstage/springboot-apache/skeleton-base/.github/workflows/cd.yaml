@@ -7,9 +7,49 @@ on:
     branches: [main]
 
 jobs:
+  preflight:
+    name: Preflight Checks
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+      APP_NAME: ${{ values.projectName }}
+      AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
+      AWS_ROLE_ARN: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
+      GITOPS_REPO_TOKEN: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in AWS_REGION AWS_ROLE_ARN GITOPS_REPO_TOKEN; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: ${key}"
+              exit 1
+            fi
+          done
+
+      - name: Validate GitOps repository access
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-remote "https://x-access-token:${GITOPS_REPO_TOKEN}@github.com/${GITOPS_REPO}.git" HEAD >/dev/null
+
+      - name: Validate app directory state in GitOps repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "https://x-access-token:${GITOPS_REPO_TOKEN}@github.com/${GITOPS_REPO}.git" gitops-repo
+          if [ -d "gitops-repo/apps/${APP_NAME}" ]; then
+            echo "GitOps app path exists: apps/${APP_NAME} (update mode)"
+          else
+            echo "GitOps app path does not exist yet: apps/${APP_NAME} (bootstrap mode)"
+          fi
+
   publish-ecr:
     name: Build and Push to ECR
     if: github.event.workflow_run.conclusion == 'success'
+    needs: preflight
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,7 +59,7 @@ jobs:
       AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
       ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
       GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
-      APP_NAME: ${{ values.repo }}
+      APP_NAME: ${{ values.projectName }}
       APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
     steps:
       - name: Checkout

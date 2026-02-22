@@ -182,23 +182,23 @@ spec:
       input:
         amount: 5
 
-    - id: create-argocd-app
-      name: Create ArgoCD App
-      action: cnoe:create-argocd-app
-      input:
-        appName: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-        appNamespace: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-        argoInstance: in-cluster
-        projectName: default
-        repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
-        path: apps/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-
     - id: register
       name: Register in Catalog
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: /catalog-info.yaml
+
+    - id: create-argocd-app
+      name: Create ArgoCD App
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{ parameters.name }}
+        appNamespace: ${{ parameters.name }}
+        argoInstance: in-cluster
+        projectName: default
+        repoUrl: https://github.com/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('repo') }}
+        path: apps/${{ parameters.name }}
 
   output:
     links:
