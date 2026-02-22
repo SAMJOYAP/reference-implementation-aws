@@ -17,6 +17,7 @@ spec:
       required:
         - projectName
         - repoUrl
+        - gitopsRepoUrl
       properties:
         projectName:
           type: string
@@ -42,6 +43,16 @@ spec:
           enum:
             - public
             - private
+        gitopsRepoUrl:
+          title: GitOps Repository
+          type: string
+          description: Existing GitOps repository where deployment manifests are managed.
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - SAMJOYAP
         groupId:
           type: string
           title: Group ID
@@ -156,6 +167,8 @@ spec:
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          gitopsOwner: ${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('owner') }}
+          gitopsRepo: ${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('repo') }}
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
@@ -190,8 +203,8 @@ spec:
         appNamespace: ${{ parameters.projectName }}
         argoInstance: in-cluster
         projectName: default
-        repoUrl: ${{ steps['create-repo'].output.remoteUrl }}
-        path: manifests
+        repoUrl: https://github.com/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.gitopsRepoUrl | parseRepoUrl | pick('repo') }}
+        path: apps/${{ parameters.projectName }}
 
     - id: register
       name: Register in Catalog

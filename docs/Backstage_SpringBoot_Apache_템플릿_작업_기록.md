@@ -189,6 +189,7 @@ Ingress host 형식:
   - 기본값: `public`
 - `github:repo:create` 입력에 `repoVisibility` 연결
 - `github:repo:create` 입력에 `allowAutoMerge: true` 추가(생성 repo 자동 설정)
+- `template.yaml`에 `gitopsRepoUrl` 파라미터 추가
 
 ### 11.3 CD 구성 추가 및 CI/CD 분리
 
@@ -241,6 +242,11 @@ Ingress host 형식:
 
 - 템플릿의 `github:repo:create`에서 `allowAutoMerge: true`를 자동 설정
 - CD에서 생성한 이미지 업데이트 PR에 auto-merge를 자동 활성화
+
+### 12.6 GitOps 연동 필수 시크릿
+
+- `GITOPS_REPO_TOKEN` 필요
+- 용도: GitOps repo(`apps/<app-name>`) 경로에 PR 생성 및 auto-merge
 
 ---
 

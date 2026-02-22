@@ -12,12 +12,15 @@ jobs:
     if: (github.event_name == 'workflow_dispatch') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.actor.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
-      pull-requests: write
+      pull-requests: read
     env:
       AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
       ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
+      GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+      APP_NAME: ${{ values.projectName }}
+      APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,44 +92,169 @@ jobs:
           docker push "$IMAGE_URI:$VERSION_TAG"
           docker push "$IMAGE_URI:$SHA_TAG"
 
-      - name: Update deployment image tag
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+          token: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          ref: main
+          path: gitops-repo
+
+      - name: Bootstrap app manifests in GitOps repo
+        shell: bash
+        run: |
+          APP_DIR="gitops-repo/apps/$APP_NAME"
+          MANIFEST_DIR="$APP_DIR/manifests"
+          mkdir -p "$MANIFEST_DIR"
+
+          if [ ! -f "$APP_DIR/kustomization.yaml" ]; then
+            cat > "$APP_DIR/kustomization.yaml" <<YAML
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - manifests/namespace.yaml
+  - manifests/service.yaml
+  - manifests/deployment.yaml
+  - manifests/ingress.yaml
+YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/namespace.yaml" ]; then
+            cat > "$MANIFEST_DIR/namespace.yaml" <<YAML
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: $APP_NAME
+  labels:
+    app.kubernetes.io/name: $APP_NAME
+YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/service.yaml" ]; then
+            cat > "$MANIFEST_DIR/service.yaml" <<YAML
+apiVersion: v1
+kind: Service
+metadata:
+  name: $APP_NAME
+  namespace: $APP_NAME
+  labels:
+    app.kubernetes.io/name: $APP_NAME
+spec:
+  selector:
+    app.kubernetes.io/name: $APP_NAME
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
+YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/deployment.yaml" ]; then
+            cat > "$MANIFEST_DIR/deployment.yaml" <<YAML
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $APP_NAME
+  namespace: $APP_NAME
+  labels:
+    app.kubernetes.io/name: $APP_NAME
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: $APP_NAME
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: $APP_NAME
+    spec:
+      containers:
+        - name: app
+          image: httpd:2.4-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/ingress.yaml" ]; then
+            cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $APP_NAME
+  namespace: $APP_NAME
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: $APP_HOST
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: $APP_NAME
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - $APP_HOST
+      secretName: $APP_NAME-tls
+YAML
+          fi
+
+      - name: Update GitOps deployment image tag
         env:
           REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
           VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
         shell: bash
         run: |
           IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
-          sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" manifests/deployment.yaml
+          DEPLOYMENT_FILE="gitops-repo/apps/$APP_NAME/manifests/deployment.yaml"
+          sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" "$DEPLOYMENT_FILE"
 
-      - name: Check manifest changes
+      - name: Check GitOps manifest changes
         id: manifest_changes
         shell: bash
         run: |
-          if git diff --quiet -- manifests/deployment.yaml; then
+          if git -C gitops-repo diff --quiet -- "apps/$APP_NAME"; then
             echo "No manifest changes detected."
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Create pull request for manifest update
+      - name: Create pull request in GitOps repo
         id: create_pr
         if: steps.manifest_changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "chore(cd): update image tag [skip ci]"
-          title: "chore(cd): update image tag"
+          token: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          path: gitops-repo
+          commit-message: "chore(cd): update ${{ values.projectName }} image tag [skip ci]"
+          title: "chore(cd): update ${{ values.projectName }} image tag"
           body: |
-            Automated manifest image tag update from CD workflow.
-          branch: chore/cd-update-image
+            Automated GitOps manifest update from `${{ values.projectName }}` CD workflow.
+          branch: chore/cd-update-image-${{ values.projectName }}
           base: main
           delete-branch: true
           add-paths: |
-            manifests/deployment.yaml
+            apps/${{ values.projectName }}/kustomization.yaml
+            apps/${{ values.projectName }}/manifests/namespace.yaml
+            apps/${{ values.projectName }}/manifests/service.yaml
+            apps/${{ values.projectName }}/manifests/deployment.yaml
+            apps/${{ values.projectName }}/manifests/ingress.yaml
 
-      - name: Enable auto-merge for manifest PR
-        if: steps.manifest_changes.outputs.changed == 'true'
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: {% raw %}${{ steps.create_pr.outputs.pull-request-number }}{% endraw %}
-          merge-method: squash
+      - name: Enable auto-merge for GitOps PR
+        if: steps.manifest_changes.outputs.changed == 'true' && steps.create_pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          PR_NUMBER: {% raw %}${{ steps.create_pr.outputs.pull-request-number }}{% endraw %}
+        shell: bash
+        run: |
+          gh pr merge "$PR_NUMBER" --auto --squash --repo "$GITOPS_REPO"

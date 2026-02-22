@@ -269,6 +269,7 @@ refusing to allow a GitHub App to create or update workflow
   - 기본값: `public`
 - `github:repo:create` 입력에 `repoVisibility` 연결
 - `github:repo:create` 입력에 `allowAutoMerge: true` 추가(생성 repo 자동 설정)
+- `template.yaml`에 `gitopsRepoUrl` 파라미터 추가
 
 ### 11.2 CI/CD 분리 및 실행 순서 고정
 
@@ -318,6 +319,11 @@ refusing to allow a GitHub App to create or update workflow
 
 - 템플릿의 `github:repo:create`에서 `allowAutoMerge: true`를 자동 설정
 - CD에서 생성한 이미지 업데이트 PR에 auto-merge를 자동 활성화
+
+### 12.5 GitOps 연동 필수 시크릿
+
+- `GITOPS_REPO_TOKEN` 필요
+- 용도: GitOps repo(`apps/<app-name>`) 경로에 PR 생성 및 auto-merge
 
 ---
 

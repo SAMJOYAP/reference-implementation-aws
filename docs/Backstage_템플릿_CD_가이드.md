@@ -36,8 +36,8 @@ CD (`cd.yaml`):
 - `workflow_run` 기반으로 CI 완료 후 실행
 - `CI` 성공 + `main` 브랜치 조건에서만 실행
 - ECR 이미지 빌드/푸시
-- `manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
-- 보호 브랜치 환경을 고려해 direct push 대신 PR 자동 생성
+- GitOps repo `apps/<app-name>/manifests/deployment.yaml`의 `image:`를 새 버전 태그로 갱신
+- 보호 브랜치 환경을 고려해 GitOps repo에 PR 자동 생성
 - 생성된 PR에 auto-merge를 설정(필수 체크 통과 시 자동 병합)
 - 필요 시 `workflow_dispatch`로 수동 실행 가능
 
@@ -53,8 +53,8 @@ CD (`cd.yaml`):
 3. `workflow_run`으로 `CD` 실행
 4. Git 태그 기반 버전 계산 (태그 없으면 `1.0.0`)
 5. Docker 이미지 빌드 후 ECR에 push
-6. `manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
-7. 변경 매니페스트로 PR 자동 생성
+6. GitOps repo `apps/<app-name>/manifests/deployment.yaml`의 `image` 값을 새 태그로 수정
+7. 변경 매니페스트로 GitOps repo PR 자동 생성
 8. PR auto-merge 대기(필수 체크 통과 시 자동 병합)
 9. Argo CD가 Git 변경 감지, 클러스터 반영
 
@@ -70,8 +70,8 @@ flowchart TD
     C2 --> D[Resolve version from git tag or 1.0.0]
     D --> E[Build Docker image]
     E --> F[Push image to Amazon ECR]
-    F --> G[Update manifests/deployment.yaml image tag]
-    G --> H[Create PR for manifest update]
+    F --> G[Update GitOps apps/<app>/manifests/deployment.yaml image tag]
+    G --> H[Create PR in GitOps repo]
     H --> I[Enable auto-merge]
     I --> I2[Auto-merge PR when checks pass]
     I2 --> J[Argo CD detects Git change and sync]
@@ -86,10 +86,12 @@ flowchart TD
 
 - `AWS_ROLE_ARN`
 - `AWS_REGION`
+- `GITOPS_REPO_TOKEN`
 
 설명:
 - `AWS_ROLE_ARN`: GitHub OIDC로 AssumeRole 할 AWS IAM Role ARN
 - `AWS_REGION`: ECR 리전 (예: `ap-northeast-2`)
+- `GITOPS_REPO_TOKEN`: GitOps repo에 PR 생성/auto-merge 가능한 토큰(App token 또는 PAT)
 
 권장:
 - 민감정보가 아닌 `AWS_REGION`은 Organization Variables로 관리해도 무방
