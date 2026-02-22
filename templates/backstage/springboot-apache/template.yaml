@@ -199,7 +199,7 @@ spec:
         appNamespace: ${{ parameters.projectName }}
         argoInstance: in-cluster
         projectName: default
-        repoUrl: ${{ 'https://github.com/' + (parameters.gitopsRepoUrl | parseRepoUrl | pick('owner')) + '/' + (parameters.gitopsRepoUrl | parseRepoUrl | pick('repo')) }}
+        repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.projectName }}
 
   output:
