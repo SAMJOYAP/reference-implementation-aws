@@ -78,7 +78,21 @@ spec:
           type: string
           title: VPC CIDR Block
           default: '10.0.0.0/16'
-          description: CIDR block for the VPC. 3 public and 3 private subnets will be created across AZs.
+          description: CIDR block for the VPC (must be a valid network address). 3 public and 3 private subnets will be created across AZs.
+          enum:
+            - '10.0.0.0/16'
+            - '10.1.0.0/16'
+            - '10.2.0.0/16'
+            - '10.10.0.0/16'
+            - '172.16.0.0/16'
+            - '192.168.0.0/16'
+          enumNames:
+            - '10.0.0.0/16'
+            - '10.1.0.0/16'
+            - '10.2.0.0/16'
+            - '10.10.0.0/16'
+            - '172.16.0.0/16'
+            - '192.168.0.0/16'
 
     - title: Node Group Configuration
       properties:
