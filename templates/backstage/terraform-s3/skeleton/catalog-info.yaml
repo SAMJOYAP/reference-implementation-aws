@@ -1,7 +1,7 @@
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: ${{ values.name }}-s3
+  name: "${{ values.name }}-s3"
   description: S3 bucket ${{ values.name }} in ${{ values.region }}
   annotations:
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
@@ -17,7 +17,7 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: ${{ values.name }}
+  name: "${{ values.name }}"
   description: Terraform configuration for S3 bucket
   annotations:
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}

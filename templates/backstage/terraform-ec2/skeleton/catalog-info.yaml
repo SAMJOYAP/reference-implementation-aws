@@ -1,7 +1,7 @@
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: ${{ values.name }}-ec2
+  name: "${{ values.name }}-ec2"
   description: EC2 instance ${{ values.instanceType }} in ${{ values.region }}
   annotations:
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
@@ -17,7 +17,7 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: ${{ values.name }}
+  name: "${{ values.name }}"
   description: Terraform configuration for EC2 instance
   annotations:
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}

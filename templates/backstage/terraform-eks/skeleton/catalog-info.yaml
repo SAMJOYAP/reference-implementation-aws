@@ -1,7 +1,7 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: ${{ values.name }}
+  name: "${{ values.name }}"
   description: EKS cluster - ${{ values.name }}
   annotations:
     github.com/project-slug: ${{ values.githubOrg }}/${{ values.name }}
@@ -19,7 +19,7 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: ${{ values.name }}-cluster
+  name: "${{ values.name }}-cluster"
   description: EKS Kubernetes cluster (${{ values.name }}) in ${{ values.region }}
   tags:
     - eks
