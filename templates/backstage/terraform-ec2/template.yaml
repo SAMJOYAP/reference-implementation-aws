@@ -70,6 +70,23 @@ spec:
           title: VPC Name
           description: 'Name tag of the VPC to deploy into (e.g. eksctl-sesac-ref-impl-cluster/VPC). Check AWS Console → VPC → Your VPCs → Name column.'
 
+    - title: AWS Credentials
+      description: 'Access keys will be stored as GitHub repository secrets and never written to code. Note: values are visible in Backstage scaffolder logs.'
+      required:
+        - awsAccessKeyId
+        - awsSecretAccessKey
+      properties:
+        awsAccessKeyId:
+          type: string
+          title: AWS Access Key ID
+          ui:widget: password
+          writeOnly: true
+        awsSecretAccessKey:
+          type: string
+          title: AWS Secret Access Key
+          ui:widget: password
+          writeOnly: true
+
   steps:
     - id: create-repo
       name: Create Repository
@@ -82,6 +99,22 @@ spec:
           - aws
           - ec2
           - backstage
+
+    - id: set-secret-access-key-id
+      name: Set AWS_ACCESS_KEY_ID secret
+      action: github:actions:create-secret
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        secretName: AWS_ACCESS_KEY_ID
+        value: ${{ parameters.awsAccessKeyId if parameters.awsAccessKeyId else secrets.AWS_ACCESS_KEY_ID }}
+
+    - id: set-secret-secret-access-key
+      name: Set AWS_SECRET_ACCESS_KEY secret
+      action: github:actions:create-secret
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        secretName: AWS_SECRET_ACCESS_KEY
+        value: ${{ parameters.awsSecretAccessKey if parameters.awsSecretAccessKey else secrets.AWS_SECRET_ACCESS_KEY }}
 
     - id: template
       name: Generating component
