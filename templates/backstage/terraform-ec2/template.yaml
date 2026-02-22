@@ -65,6 +65,11 @@ spec:
             - 'US West (Oregon)'
             - 'Asia Pacific (Seoul)'
             - 'EU (Ireland)'
+        vpcId:
+          type: string
+          title: VPC ID
+          description: 'VPC to deploy into (e.g. the EKS cluster VPC). Public subnets tagged kubernetes.io/role/elb=1 are preferred.'
+          pattern: '^vpc-[0-9a-f]+$'
 
   steps:
     - id: create-repo
@@ -88,6 +93,7 @@ spec:
           name: ${{ parameters.name }}
           instanceType: ${{ parameters.instanceType }}
           region: ${{ parameters.region }}
+          vpcId: ${{ parameters.vpcId }}
           repoUrl: ${{ parameters.repoUrl }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
