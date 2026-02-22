@@ -32,6 +32,30 @@ provider "aws" {
   }
 }
 
+# Look up subnets in the given VPC (prefer public subnets for SSH/HTTP access)
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+
+  tags = {
+    "kubernetes.io/role/elb" = "1"
+  }
+}
+
+# Fallback: any subnet in the VPC if no elb-tagged subnets exist
+data "aws_subnets" "any" {
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+}
+
+locals {
+  subnet_id = length(data.aws_subnets.public.ids) > 0 ? tolist(data.aws_subnets.public.ids)[0] : tolist(data.aws_subnets.any.ids)[0]
+}
+
 # Get latest Amazon Linux 2023 AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -52,6 +76,7 @@ data "aws_ami" "amazon_linux" {
 resource "aws_security_group" "main" {
   name_prefix = "${{ values.name }}-"
   description = "Security group for ${{ values.name }} EC2 instance"
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "SSH"
@@ -86,6 +111,7 @@ resource "aws_security_group" "main" {
 resource "aws_instance" "main" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.instance_type
+  subnet_id              = local.subnet_id
   vpc_security_group_ids = [aws_security_group.main.id]
 
   user_data = <<-EOF
