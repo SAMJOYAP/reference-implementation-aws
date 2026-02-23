@@ -105,6 +105,7 @@ spec:
           type: string
           title: EKS Cluster
           description: 배포 대상 EKS 클러스터를 선택합니다. (필수)
+          default: sesac-ref-impl
           ui:field: EksClusterPicker
           ui:options:
             region: ap-northeast-2
