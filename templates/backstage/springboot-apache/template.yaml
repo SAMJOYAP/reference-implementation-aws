@@ -128,22 +128,25 @@ spec:
           title: 기본 도메인
           description: Ingress 호스트를 구성할 때 사용할 기본 도메인입니다.
           default: sesac.already11.cloud
-    - title: 클라우드 배포 옵션
+    - title: 클라우드/배포 옵션
+      required:
+        - eksCluster
       properties:
         eksCluster:
           type: string
           title: EKS Cluster
-          description: 배포 대상 EKS 클러스터를 선택합니다. (향후 VPC/서브넷 선택 항목 확장 예정)
+          description: 배포 대상 EKS 클러스터를 선택합니다. (필수)
           ui:field: EksClusterPicker
           ui:options:
             region: ap-northeast-2
-    - title: 배포 옵션
-      properties:
         targetNamespace:
           type: string
           title: 대상 Namespace
-          description: 비워두면 프로젝트 이름(projectName)을 Namespace로 사용합니다.
+          description: 기본값은 프로젝트 이름(projectName)이며, 필요하면 수정할 수 있습니다.
           pattern: '^[a-z0-9-]+$'
+          ui:field: DefaultNamespace
+          ui:options:
+            sourceField: projectName
         argoProject:
           type: string
           title: Argo CD Project
