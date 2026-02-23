@@ -2,16 +2,17 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.name }}
-  description: Node.js web app served by nginx
+  description: Nginx로 서비스되는 Node.js 웹 앱
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
     argocd/app-name: ${{ values.name }}
+    backstage.io/kubernetes-cluster: ${{ values.eksCluster }}
     backstage.io/kubernetes-label-selector: 'entity-id=${{ values.name }}'
     backstage.io/kubernetes-namespace: ${{ values.name }}
   links:
     - url: ${{ values.remoteUrl }}
-      title: Repository
+      title: 저장소
       icon: github
     - url: ${{ values.remoteUrl }}/actions
       title: GitHub Actions

@@ -2,8 +2,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: springboot-gradle-apache
-  title: Java Web App (Apache + Spring Boot + Gradle)
-  description: Creates a Java web project served by Apache, with Spring Boot + Gradle setup and optional ingress.
+  title: Java 웹 앱 (Apache + Spring Boot + Gradle)
+  description: Apache로 서비스되는 Java 웹 프로젝트를 생성하며, Spring Boot + Gradle 설정과 선택형 Ingress를 함께 구성합니다.
   tags:
     - java
     - spring-boot
@@ -13,21 +13,21 @@ spec:
   owner: platform-team
   type: service
   parameters:
-    - title: Project Information
+    - title: 프로젝트 정보
       required:
         - projectName
         - repoUrl
       properties:
         projectName:
           type: string
-          title: Project Name
-          description: Kubernetes-safe project name
+          title: 프로젝트 이름
+          description: Kubernetes 규칙에 맞는 프로젝트 이름
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
-          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account.'
+          description: '중요: 개인 계정이 아닌 GitHub Organization 이름(예: SAMJOYAP)을 사용하세요.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -36,8 +36,8 @@ spec:
               - SAMJOYAP
         repoVisibility:
           type: string
-          title: Repository Visibility
-          description: Choose whether to create a public or private GitHub repository.
+          title: 저장소 공개 범위
+          description: GitHub 저장소를 public 또는 private 중에서 선택합니다.
           default: public
           enum:
             - public
@@ -50,7 +50,7 @@ spec:
           type: string
           title: Artifact ID
           default: app
-    - title: Version and Build Options
+    - title: 버전 및 빌드 옵션
       properties:
         javaVersion:
           type: string
@@ -78,47 +78,54 @@ spec:
             - '8.12.1'
         packaging:
           type: string
-          title: Packaging
+          title: 패키징 방식
           default: jar
           enum:
             - jar
             - war
         useActuator:
           type: boolean
-          title: Use Spring Actuator
+          title: Spring Actuator 사용
           default: true
         useSpringWeb:
           type: boolean
-          title: Use Spring Web
+          title: Spring Web 사용
           default: true
         useLombok:
           type: boolean
-          title: Use Lombok
+          title: Lombok 사용
           default: false
-    - title: Network Options
+    - title: 네트워크 옵션
       required:
         - hostPrefix
       properties:
         servicePort:
           type: number
-          title: Service Port
+          title: 서비스 포트
           default: 80
         enableIngress:
           type: boolean
-          title: Create Ingress
+          title: Ingress 생성
           default: true
         hostPrefix:
           type: string
-          title: Host Prefix
+          title: 호스트 접두사
           pattern: '^[a-z0-9-]+$'
         baseDomain:
           type: string
-          title: Base Domain
+          title: 기본 도메인
           default: sesac.already11.cloud
+        eksCluster:
+          type: string
+          title: EKS Cluster
+          description: 배포 대상 EKS 클러스터를 선택합니다.
+          ui:field: EksClusterPicker
+          ui:options:
+            region: ap-northeast-2
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -126,7 +133,7 @@ spec:
         allowAutoMerge: true
         allowSquashMerge: true
         deleteBranchOnMerge: true
-        description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
+        description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
         topics:
           - spring-boot
           - gradle
@@ -135,7 +142,7 @@ spec:
           - backstage
 
     - id: template-base
-      name: Generate Base Project
+      name: 기본 프로젝트 생성
       action: fetch:template
       input:
         url: ./skeleton-base
@@ -153,6 +160,7 @@ spec:
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
           baseDomain: ${{ parameters.baseDomain }}
+          eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
@@ -161,7 +169,7 @@ spec:
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
-      name: Add Ingress Manifest
+      name: Ingress 매니페스트 추가
       action: fetch:template
       input:
         url: ./skeleton-ingress
@@ -172,27 +180,27 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Wait for Repository
+      name: 저장소 준비 대기
       action: roadiehq:utils:sleep
       input:
         amount: 5
 
     - id: register
-      name: Register in Catalog
+      name: Catalog 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: /catalog-info.yaml
 
     - id: create-argocd-app
-      name: Create ArgoCD App
+      name: ArgoCD App 생성
       action: cnoe:create-argocd-app
       input:
         appName: ${{ parameters.projectName }}
@@ -208,12 +216,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: Catalog에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

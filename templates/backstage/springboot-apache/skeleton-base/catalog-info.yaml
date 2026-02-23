@@ -2,16 +2,17 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.projectName }}
-  description: Java web project (Apache + Spring Boot + Gradle) generated from Backstage template
+  description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
     argocd/app-name: ${{ values.projectName }}
+    backstage.io/kubernetes-cluster: ${{ values.eksCluster }}
     backstage.io/kubernetes-label-selector: 'entity-id=${{ values.projectName }}'
     backstage.io/kubernetes-namespace: ${{ values.projectName }}
   links:
     - url: ${{ values.remoteUrl }}
-      title: Repository
+      title: 저장소
       icon: github
     - url: ${{ values.remoteUrl }}/actions
       title: GitHub Actions

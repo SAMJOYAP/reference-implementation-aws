@@ -2,8 +2,8 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: nodejs-nginx-webapp
-  title: Node.js Web App (Nginx + Optional Express)
-  description: Creates a Node.js web project served by nginx, with optional Express setup and GitHub Actions CI.
+  title: Node.js 웹 앱 (Nginx + 선택형 Express)
+  description: Nginx로 서비스되는 Node.js 웹 프로젝트를 생성하며, 필요 시 Express 설정과 GitHub Actions CI를 함께 구성합니다.
   tags:
     - nodejs
     - nginx
@@ -13,21 +13,21 @@ spec:
   owner: platform-team
   type: service
   parameters:
-    - title: Project Information
+    - title: 프로젝트 정보
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          title: Project Name
-          description: Kubernetes and repository-safe project name
+          title: 프로젝트 이름
+          description: Kubernetes와 저장소 규칙에 맞는 프로젝트 이름
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
-          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account.'
+          description: '중요: 개인 계정이 아닌 GitHub Organization 이름(예: SAMJOYAP)을 사용하세요.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -36,18 +36,18 @@ spec:
               - SAMJOYAP
         repoVisibility:
           type: string
-          title: Repository Visibility
-          description: Choose whether to create a public or private GitHub repository.
+          title: 저장소 공개 범위
+          description: GitHub 저장소를 public 또는 private 중에서 선택합니다.
           default: public
           enum:
             - public
             - private
-    - title: Runtime Options
+    - title: 런타임 옵션
       properties:
         appLanguage:
           type: string
-          title: Language
-          description: Choose JavaScript or TypeScript project scaffold.
+          title: 언어
+          description: JavaScript 또는 TypeScript 프로젝트 스캐폴드를 선택합니다.
           default: javascript
           enum:
             - javascript
@@ -55,7 +55,7 @@ spec:
         nodeVersion:
           type: string
           title: Node.js Version
-          description: Default is 24.13.1 LTS. You can choose another version.
+          description: 기본값은 24.13.1 LTS이며, 다른 버전을 선택할 수 있습니다.
           default: 24.13.1
           enum:
             - 24.13.1
@@ -63,37 +63,44 @@ spec:
             - 20.19.4
         useExpress:
           type: boolean
-          title: Install Express
-          description: If checked, Express server scaffold and dependency are added automatically.
+          title: Express 설치
+          description: 선택하면 Express 서버 스캐폴드와 의존성이 자동으로 추가됩니다.
           default: false
-    - title: Network Options
+    - title: 네트워크 옵션
       required:
         - hostPrefix
       properties:
         servicePort:
           type: number
-          title: Service Port
-          description: Service port exposed inside the cluster (nginx target port is fixed to 80).
+          title: 서비스 포트
+          description: 클러스터 내부에 노출할 서비스 포트입니다(Nginx target port는 80으로 고정).
           default: 80
         enableIngress:
           type: boolean
-          title: Create Ingress
-          description: If checked, ingress manifest is generated.
+          title: Ingress 생성
+          description: 선택하면 Ingress 매니페스트를 생성합니다.
           default: true
         hostPrefix:
           type: string
-          title: Host Prefix
-          description: Subdomain prefix. Example `node-test`.
+          title: 호스트 접두사
+          description: 서브도메인 접두사입니다. 예: `node-test`
           pattern: '^[a-z0-9-]+$'
         baseDomain:
           type: string
-          title: Base Domain
-          description: Base domain used to build ingress host.
+          title: 기본 도메인
+          description: Ingress 호스트를 구성할 때 사용할 기본 도메인
           default: sesac.already11.cloud
+        eksCluster:
+          type: string
+          title: EKS Cluster
+          description: 배포 대상 EKS 클러스터를 선택합니다.
+          ui:field: EksClusterPicker
+          ui:options:
+            region: ap-northeast-2
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -101,7 +108,7 @@ spec:
         allowAutoMerge: true
         allowSquashMerge: true
         deleteBranchOnMerge: true
-        description: Node.js nginx web project generated from Backstage template
+        description: Backstage 템플릿으로 생성된 Node.js Nginx 웹 프로젝트
         topics:
           - backstage
           - nodejs
@@ -109,7 +116,7 @@ spec:
           - webapp
 
     - id: template-base
-      name: Generate Base Project
+      name: 기본 프로젝트 생성
       action: fetch:template
       input:
         url: ./skeleton-base
@@ -121,6 +128,7 @@ spec:
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
           baseDomain: ${{ parameters.baseDomain }}
+          eksCluster: ${{ parameters.eksCluster }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -129,7 +137,7 @@ spec:
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
-      name: Add Ingress Manifest
+      name: Ingress 매니페스트 추가
       action: fetch:template
       input:
         url: ./skeleton-ingress
@@ -141,7 +149,7 @@ spec:
 
     - id: template-express
       if: ${{ parameters.useExpress && parameters.appLanguage == 'javascript' }}
-      name: Add Express Overlay (JavaScript)
+      name: Express 오버레이 추가 (JavaScript)
       action: fetch:template
       input:
         url: ./skeleton-express
@@ -151,7 +159,7 @@ spec:
 
     - id: template-typescript
       if: ${{ parameters.appLanguage == 'typescript' }}
-      name: Add TypeScript Overlay
+      name: TypeScript 오버레이 추가
       action: fetch:template
       input:
         url: ./skeleton-typescript-base
@@ -161,7 +169,7 @@ spec:
 
     - id: template-express-typescript
       if: ${{ parameters.useExpress && parameters.appLanguage == 'typescript' }}
-      name: Add Express Overlay (TypeScript)
+      name: Express 오버레이 추가 (TypeScript)
       action: fetch:template
       input:
         url: ./skeleton-typescript-express
@@ -170,27 +178,27 @@ spec:
           nodeVersion: ${{ parameters.nodeVersion }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Wait for Repository
+      name: 저장소 준비 대기
       action: roadiehq:utils:sleep
       input:
         amount: 5
 
     - id: register
-      name: Register in Catalog
+      name: Catalog 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: /catalog-info.yaml
 
     - id: create-argocd-app
-      name: Create ArgoCD App
+      name: ArgoCD App 생성
       action: cnoe:create-argocd-app
       input:
         appName: ${{ parameters.name }}
@@ -206,12 +214,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: Catalog에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions
