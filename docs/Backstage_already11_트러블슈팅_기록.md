@@ -10,14 +10,14 @@
 - cluster secret annotation/revision
 
 따라서 **주 문서는 `reference-implementation-aws/docs`에 작성**하는 것이 맞다.
-`backstage-app`은 이미지/앱 코드 관점 메모만 유지한다.
+`backstage-already11`은 이미지/앱 코드 관점 메모만 유지한다.
 
 ## 요약
 
 문제는 크게 3가지였다.
 
 1. `/kr/` 접속 시 기존 backstage로 라우팅되거나 404
-2. `backstage-kr` 앱에서 `ComparisonError` 발생
+2. `backstage-already11` 앱에서 `ComparisonError` 발생
 3. `Application` 삭제 후 재생성/동기화가 꼬임
 
 핵심 원인:
@@ -26,14 +26,14 @@
 - Argo CD 상위 앱(`addons-appset-pr-*`)이 동일 repo를 서로 다른 revision(`main` vs SHA)으로 참조하는 stale operation 상태
 
 현재 운영 결론:
-- `/kr` 경로 방식은 사용하지 않고, `https://backstage-kr.<domain>` 서브도메인 방식으로 고정
+- `/kr` 경로 방식은 사용하지 않고, `https://bs.<domain>` 서브도메인 방식으로 고정
 
 ## 1) 증상: `/kr/` 접속 시 기존 backstage 또는 404
 
 ### 확인 명령
 
 ```bash
-kubectl get ingress -A -o yaml | egrep -n "name: backstage-kr|host: sesac.already11.cloud|path: /kr|rewrite-target|use-regex"
+kubectl get ingress -A -o yaml | egrep -n "name: backstage-already11|host: sesac.already11.cloud|path: /kr|rewrite-target|use-regex"
 ```
 
 ### 기대값
@@ -44,7 +44,7 @@ kubectl get ingress -A -o yaml | egrep -n "name: backstage-kr|host: sesac.alread
 
 ### 조치
 
-`packages/addons/values.yaml`의 `backstage-kr.valuesObject.ingress`를 아래와 같이 유지:
+`packages/addons/values.yaml`의 `backstage-already11.valuesObject.ingress`를 아래와 같이 유지:
 
 - `path: /kr(/|$)(.*)` (path-routing일 때)
 - `use-regex: true`
@@ -65,12 +65,12 @@ kubectl get ingress -A -o yaml | egrep -n "name: backstage-kr|host: sesac.alread
 
 ### 조치
 
-레포 전체에서 `backstage-kr` 관련 `pathType` 제거 후 재동기화.
+레포 전체에서 `backstage-already11` 관련 `pathType` 제거 후 재동기화.
 
 검증:
 
 ```bash
-kubectl -n argocd get app backstage-kr-sesac-ref-impl -o yaml | grep -n pathType
+kubectl -n argocd get app backstage-already11-sesac-ref-impl -o yaml | grep -n pathType
 ```
 
 정상: 출력 없음
@@ -108,14 +108,14 @@ kubectl -n argocd delete application addons-appset-pr-sesac-ref-impl
 
 # 4) 재생성 확인
 kubectl -n argocd get application addons-appset-pr-sesac-ref-impl -o wide
-kubectl -n argocd get applicationset backstage-kr
-kubectl -n argocd get application backstage-kr-sesac-ref-impl -o wide
+kubectl -n argocd get applicationset backstage-already11
+kubectl -n argocd get application backstage-already11-sesac-ref-impl -o wide
 ```
 
 정상 상태 예:
 - `addons-appset-pr-sesac-ref-impl`: `Synced / Healthy`
-- `applicationset backstage-kr`: 존재
-- `application backstage-kr-sesac-ref-impl`: 생성됨
+- `applicationset backstage-already11`: 존재
+- `application backstage-already11-sesac-ref-impl`: 생성됨
 
 ## 4) Application 삭제가 멈춘 것처럼 보일 때
 
@@ -126,8 +126,8 @@ kubectl -n argocd get application backstage-kr-sesac-ref-impl -o wide
 ### 조치
 
 ```bash
-kubectl -n argocd get application backstage-kr-sesac-ref-impl -o yaml | egrep -n "deletionTimestamp|finalizers"
-kubectl -n argocd patch application backstage-kr-sesac-ref-impl --type merge -p '{"metadata":{"finalizers":[]}}'
+kubectl -n argocd get application backstage-already11-sesac-ref-impl -o yaml | egrep -n "deletionTimestamp|finalizers"
+kubectl -n argocd patch application backstage-already11-sesac-ref-impl --type merge -p '{"metadata":{"finalizers":[]}}'
 ```
 
 ## 5) 노드 0 -> 재확장 후 Keycloak 로그인 타임아웃
@@ -146,24 +146,24 @@ kubectl -n argocd patch application backstage-kr-sesac-ref-impl --type merge -p 
 kubectl get pods -A | egrep -i "keycloak|backstage|ingress-nginx"
 kubectl -n keycloak rollout restart statefulset/keycloak
 kubectl -n backstage rollout restart deployment/backstage
-kubectl -n backstage-kr rollout restart deployment/backstage-kr
+kubectl -n backstage-already11 rollout restart deployment/backstage-already11
 ```
 
 ## 최종 기대 동작
 
 - `https://sesac.already11.cloud/` -> 기존 `backstage`
-- `https://backstage-kr.sesac.already11.cloud/` -> `backstage-kr`
+- `https://bs.sesac.already11.cloud/` -> `backstage-already11`
 
 검증:
 
 ```bash
-kubectl -n backstage-kr get ingress backstage-kr -o yaml | egrep -n "path:|rewrite-target|use-regex|host:"
+kubectl -n backstage-already11 get ingress backstage-already11 -o yaml | egrep -n "path:|rewrite-target|use-regex|host:"
 ```
 
 ## 최종 원인 정리 (이번 장애의 실제 순서)
 
 1. `/kr/` 경로 라우팅 미완성
-- `backstage-kr` ingress가 초기에 `/kr/` regex/rewrite 없이 적용되어
+- `backstage-already11` ingress가 초기에 `/kr/` regex/rewrite 없이 적용되어
   `/kr/` 요청이 기존 backstage로 가거나 404가 발생.
 
 2. chart schema 불일치
@@ -173,7 +173,7 @@ kubectl -n backstage-kr get ingress backstage-kr -o yaml | egrep -n "path:|rewri
 3. Argo CD 리비전 충돌
 - 동일 repo를 `main`과 고정 SHA(`080c3e...`)로 혼용 참조하는 stale operation 때문에
   `cannot reference a different revision of the same repository` 에러 반복.
-- 결과적으로 `backstage-kr` ApplicationSet/Application 재생성이 지연/실패.
+- 결과적으로 `backstage-already11` ApplicationSet/Application 재생성이 지연/실패.
 
 4. DB 인증/연결 연쇄 이슈
 - 재생성 과정에서 `POSTGRES_PASSWORD`와 기존 DB 상태가 어긋나
@@ -188,8 +188,8 @@ kubectl -n backstage-kr get ingress backstage-kr -o yaml | egrep -n "path:|rewri
 kubectl -n argocd annotate application addons-appset-pr-sesac-ref-impl argocd.argoproj.io/refresh=hard --overwrite
 kubectl -n argocd delete application addons-appset-pr-sesac-ref-impl
 kubectl -n argocd get application addons-appset-pr-sesac-ref-impl -o wide
-kubectl -n argocd get applicationset backstage-kr
-kubectl -n argocd get application backstage-kr-sesac-ref-impl -o wide
+kubectl -n argocd get applicationset backstage-already11
+kubectl -n argocd get application backstage-already11-sesac-ref-impl -o wide
 ```
 
 ### B. `/kr/` 라우팅 고정
@@ -203,39 +203,39 @@ kubectl -n argocd get application backstage-kr-sesac-ref-impl -o wide
 검증:
 
 ```bash
-kubectl -n backstage-kr get ingress backstage-kr -o yaml | egrep -n "path:|rewrite-target|use-regex|host:"
+kubectl -n backstage-already11 get ingress backstage-already11 -o yaml | egrep -n "path:|rewrite-target|use-regex|host:"
 ```
 
 ### C. DB 복구 및 안정화
 
 ```bash
 # 기존 깨진 Postgres 상태 제거
-kubectl -n backstage-kr delete statefulset backstage-kr-postgresql
-kubectl -n backstage-kr delete pvc data-backstage-kr-postgresql-0
+kubectl -n backstage-already11 delete statefulset backstage-already11-postgresql
+kubectl -n backstage-already11 delete pvc data-backstage-already11-postgresql-0
 
 # 앱 재동기화/재기동
-kubectl -n argocd patch application backstage-kr-sesac-ref-impl --type merge -p '{"operation":{"sync":{"prune":true,"syncStrategy":{"apply":{}}}}}'
-kubectl -n backstage-kr rollout restart deployment backstage-kr
-kubectl -n backstage-kr rollout status deployment backstage-kr --timeout=180s
+kubectl -n argocd patch application backstage-already11-sesac-ref-impl --type merge -p '{"operation":{"sync":{"prune":true,"syncStrategy":{"apply":{}}}}}'
+kubectl -n backstage-already11 rollout restart deployment backstage-already11
+kubectl -n backstage-already11 rollout status deployment backstage-already11 --timeout=180s
 ```
 
 최종 검증:
 
 ```bash
-kubectl -n backstage-kr get pods
-kubectl -n backstage-kr get endpoints backstage-kr-postgresql -o yaml
-kubectl -n backstage-kr logs deployment/backstage-kr --tail=140
+kubectl -n backstage-already11 get pods
+kubectl -n backstage-already11 get endpoints backstage-already11-postgresql -o yaml
+kubectl -n backstage-already11 logs deployment/backstage-already11 --tail=140
 ```
 
 정상 기준:
-- `backstage-kr` 1/1 Running
-- `backstage-kr-postgresql-0` 1/1 Running
+- `backstage-already11` 1/1 Running
+- `backstage-already11-postgresql-0` 1/1 Running
 - readiness probe `200`
 - DB 관련 `password authentication failed` / `ECONNREFUSED` 로그 미발생
 
 ## 최종 결과
 
 - `https://sesac.already11.cloud/` -> 기존 `backstage`
-- `https://sesac.already11.cloud/kr/` -> `backstage-kr`
+- `https://sesac.already11.cloud/kr/` -> `backstage-already11`
 
 두 인스턴스는 네임스페이스/DB가 분리되어 동작하고, 외부 연동(Keycloak/GitHub/ArgoCD)은 공통 구성을 참조한다.

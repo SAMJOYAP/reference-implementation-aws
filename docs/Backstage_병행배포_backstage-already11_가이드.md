@@ -1,9 +1,9 @@
-# Backstage 병행 배포 가이드 (`backstage-kr`)
+# Backstage 병행 배포 가이드 (`backstage-already11`)
 
 ## 목적
 
 기존 `backstage` 인스턴스는 유지한 상태에서, 커스텀 이미지를 사용하는 신규 Backstage를
-`backstage-kr` 네임스페이스로 병행 배포한다.
+`backstage-already11` 네임스페이스로 병행 배포한다.
 
 ## 배경
 
@@ -12,64 +12,64 @@
 
 ## 적용된 구성 변경
 
-### 배포 방식 개요 (backstage-kr)
+### 배포 방식 개요 (backstage-already11)
 
-`backstage-kr`는 수동 `kubectl apply` 방식이 아니라, 기존 IDP와 동일한 **Argo CD + ApplicationSet(Addons)** 경로로 배포된다.
+`backstage-already11`는 수동 `kubectl apply` 방식이 아니라, 기존 IDP와 동일한 **Argo CD + ApplicationSet(Addons)** 경로로 배포된다.
 
 적용 흐름:
 
-1. `packages/addons/values.yaml`에 `backstage-kr` addon 정의
+1. `packages/addons/values.yaml`에 `backstage-already11` addon 정의
 2. bootstrap가 생성한 addons ApplicationSet이 해당 정의를 읽어 Application 생성
 3. Application이 Backstage Helm Chart를 배포
-4. 동시에 `packages/backstage-kr/manifests`, `packages/backstage-kr/path-routing`의 추가 매니페스트를 동기화
-5. 결과적으로 `backstage-kr` 네임스페이스에 앱/시크릿/설정 리소스가 생성
+4. 동시에 `packages/backstage-already11/manifests`, `packages/backstage-already11/path-routing`의 추가 매니페스트를 동기화
+5. 결과적으로 `backstage-already11` 네임스페이스에 앱/시크릿/설정 리소스가 생성
 
 즉, 운영자가 직접 리소스를 개별 적용하지 않아도 Git 변경 -> Argo CD Sync로 일관되게 반영된다.
 
 ### 1) Addons에 신규 앱 추가
 
 - 파일: `packages/addons/values.yaml`
-- 신규 키: `backstage-kr`
+- 신규 키: `backstage-already11`
 - 주요 값:
   - `chartName: backstage`
-  - `namespace: backstage-kr`
-  - `releaseName: backstage-kr`
-  - `valueFiles: ["values-kr.yaml"]`
-  - Ingress host: `backstage-kr.<domain>` (non path-routing)
-  - 추가 리소스 경로: `packages/backstage-kr/manifests`
+  - `namespace: backstage-already11`
+  - `releaseName: backstage-already11`
+  - `valueFiles: ["values-already11.yaml"]`
+  - Ingress host: `bs.<domain>` (non path-routing)
+  - 추가 리소스 경로: `packages/backstage-already11/manifests`
 
 ### 2) path-routing 오버레이 추가
 
 - 파일: `packages/addons/path-routing-values.yaml`
-- `backstage-kr` 추가
+- `backstage-already11` 추가
 - 경로:
-  - `packages/backstage-kr/manifests`
+  - `packages/backstage-already11/manifests`
 
 ### 3) Argo CD AppProject 대상 네임스페이스 허용
 
 - 파일: `packages/argo-cd/manifests/appproject-cnoe.yaml`
 - 추가:
-  - `namespace: backstage-kr`
+  - `namespace: backstage-already11`
 
 ### 4) 신규 Backstage 전용 values 분리
 
-- 파일: `packages/backstage/values-kr.yaml`
+- 파일: `packages/backstage/values-already11.yaml`
 - 목적:
   - 기존 `packages/backstage/values.yaml`와 충돌 없이 신규 인스턴스 오버레이
 - 포함:
-  - TLS secret 이름 분리: `backstage-kr-server-tls`
+  - TLS secret 이름 분리: `backstage-already11-server-tls`
   - 앱 타이틀/조직명 커스터마이징
   - 이미지 태그 지정(필요 시 커스텀 태그로 교체)
 
 ### 5) 신규 네임스페이스 전용 매니페스트 분리
 
-- 디렉터리: `packages/backstage-kr/`
+- 디렉터리: `packages/backstage-already11/`
 - 파일:
   - `manifests/external-secrets.yaml`
   - `manifests/k8s-config-secret.yaml`
   - `path-routing/default-cert-external-secret.yaml`
 - 핵심:
-  - 모든 네임스페이스를 `backstage-kr`로 고정
+  - 모든 네임스페이스를 `backstage-already11`로 고정
   - 기존 `backstage` 리소스와 Secret 충돌 방지
 
 ## 왜 이렇게 분리했는가 (원인-해결)
@@ -81,7 +81,7 @@
 
 ### 해결
 
-신규 앱 전용 패키지 경로(`packages/backstage-kr`)를 만들고,
+신규 앱 전용 패키지 경로(`packages/backstage-already11`)를 만들고,
 Argo CD ApplicationSet에서 해당 경로를 별도로 읽게 구성했다.
 
 결과적으로 기존 인스턴스와 신규 인스턴스가 서로 독립적으로 동작한다.
@@ -94,9 +94,9 @@ Argo CD ApplicationSet에서 해당 경로를 별도로 읽게 구성했다.
 git add packages/addons/values.yaml \
         packages/addons/path-routing-values.yaml \
         packages/argo-cd/manifests/appproject-cnoe.yaml \
-        packages/backstage/values-kr.yaml \
-        packages/backstage-kr
-git commit -m "feat(backstage): add parallel deployment in backstage-kr namespace"
+        packages/backstage/values-already11.yaml \
+        packages/backstage-already11
+git commit -m "feat(backstage): add parallel deployment in backstage-already11 namespace"
 git push
 ```
 
@@ -108,48 +108,48 @@ kubectl get applications -n argocd | grep backstage
 
 확인 포인트:
 - 기존 `backstage-<cluster>` 앱은 유지
-- 신규 `backstage-kr-<cluster>` 앱 생성
+- 신규 `backstage-already11-<cluster>` 앱 생성
 
 ### 3) 리소스 확인
 
 ```bash
 kubectl get all -n backstage
-kubectl get all -n backstage-kr
-kubectl get externalsecret -n backstage-kr
+kubectl get all -n backstage-already11
+kubectl get externalsecret -n backstage-already11
 ```
 
 ### 4) 접속 확인
 
-- `https://backstage-kr.<domain>`
+- `https://bs.<domain>`
 
 ### 5) 경로 라우팅 동작 정리
 
-`backstage-kr`는 경로(`/kr`) 방식 대신 **서브도메인 방식**으로 고정 운영한다.
+`backstage-already11`는 경로(`/kr`) 방식 대신 **서브도메인 방식**으로 고정 운영한다.
 
 - `https://<domain>/` -> 기존 `backstage`
-- `https://backstage-kr.<domain>` -> 신규 `backstage-kr`
+- `https://bs.<domain>` -> 신규 `backstage-already11`
 
 적용된 ingress 핵심:
 
-- `host: backstage-kr.<domain>`
+- `host: bs.<domain>`
 - `path: /`
 - `cert-manager.io/cluster-issuer: letsencrypt-prod`
-- `external-dns.alpha.kubernetes.io/hostname: backstage-kr.<domain>`
+- `external-dns.alpha.kubernetes.io/hostname: bs.<domain>`
 
 설정 위치:
 
-- 주 설정: `packages/addons/values.yaml` (`backstage-kr.valuesObject.ingress`)
-- path-routing 오버레이(`packages/addons/path-routing-values.yaml`)에서는 `backstage-kr`의 추가 manifest 경로만 유지
+- 주 설정: `packages/addons/values.yaml` (`backstage-already11.valuesObject.ingress`)
+- path-routing 오버레이(`packages/addons/path-routing-values.yaml`)에서는 `backstage-already11`의 추가 manifest 경로만 유지
 
 ## 운영 주의사항
 
-1. Keycloak redirect URI에 `https://backstage-kr.<domain>/*`가 허용되어야 한다.
-2. 커스텀 이미지 태그는 `packages/backstage/values-kr.yaml`에서 관리한다.
+1. Keycloak redirect URI에 `https://bs.<domain>/*`가 허용되어야 한다.
+2. 커스텀 이미지 태그는 `packages/backstage/values-already11.yaml`에서 관리한다.
 3. 기존 `backstage` 제거는 신규 인스턴스 안정화 후 별도 변경으로 진행한다.
 
 ## 데이터 연동/분리
 
-- `backstage`와 `backstage-kr`는 각각 별도 네임스페이스와 별도 PostgreSQL(별도 PVC/DB)을 사용한다.
+- `backstage`와 `backstage-already11`는 각각 별도 네임스페이스와 별도 PostgreSQL(별도 PVC/DB)을 사용한다.
 - 따라서 애플리케이션 내부 데이터(사용자 설정, 처리 이력, DB 저장 데이터)는 기본적으로 분리된다.
 - 단, 외부 연동 대상은 일부 동일하다.
   - 동일 Keycloak realm/client 정책을 사용하면 로그인 체계는 유사하게 동작할 수 있다.

@@ -185,11 +185,11 @@ data:
       "baseUrl": "",
       "redirectUris": [
         "https://${BACKSTAGE_URL}/api/auth/keycloak-oidc/handler/frame",
-        "https://backstage-kr.${domainName}/api/auth/keycloak-oidc/handler/frame"
+        "https://bs.${domainName}/api/auth/keycloak-oidc/handler/frame"
       ],
       "webOrigins": [
         "https://${BACKSTAGE_URL}",
-        "https://backstage-kr.${domainName}"
+        "https://bs.${domainName}"
       ]
     }
   argo-client-payload.json: |

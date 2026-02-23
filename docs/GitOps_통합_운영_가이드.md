@@ -6,7 +6,7 @@
 
 - Node 템플릿 앱 (`node-express`)
 - Java 템플릿 앱 (`java-spring`)
-- Backstage 앱 (`backstage-kr`)
+- Backstage 앱 (`backstage-already11`)
 
 모든 앱의 배포 매니페스트를 별도 GitOps 저장소(`SAMJOYAP/gitops`)에서 관리하도록 통일합니다.
 
@@ -18,7 +18,7 @@
 
 - `SAMJOYAP/node-express`
 - `SAMJOYAP/java-spring`
-- `SAMJOYAP/backstage-app`
+- `SAMJOYAP/backstage-already11`
 
 역할:
 - 애플리케이션 소스코드 관리
@@ -31,12 +31,12 @@
 배포 경로:
 - `apps/node-express/...`
 - `apps/java-spring/...`
-- `apps/backstage-kr/...`
+- `apps/backstage-already11/...`
 
 역할:
 - Kubernetes 배포 매니페스트 단일 소스
 - Node/Java CD는 `deployment.yaml`의 `image:` 갱신
-- Backstage CD는 `values-kr.yaml`의 `backstage.image.*` 갱신
+- Backstage CD는 `values-already11.yaml`의 `backstage.image.*` 갱신
 - PR + auto-merge로 변경 반영
 
 ---
@@ -62,13 +62,13 @@
 ## 4. Backstage 앱 반영 사항
 
 변경 파일:
-- `backstage-app/.github/workflows/build-and-deploy-ecr.yaml`
+- `backstage-already11/.github/workflows/build-and-deploy-ecr.yaml`
 
 핵심 변경:
-1. 기존 `reference-implementation-aws/packages/backstage/values-kr.yaml` 직접 수정 방식 제거
-2. `SAMJOYAP/gitops/apps/backstage-kr` 갱신 방식으로 전환
+1. 기존 `reference-implementation-aws/packages/backstage/values-already11.yaml` 직접 수정 방식 제거
+2. `SAMJOYAP/gitops/apps/backstage-already11` 갱신 방식으로 전환
 3. GitOps repo에 PR 생성 + auto-merge 수행
-4. `packages/appset-chart`에서 `backstage-kr`만 GitOps repo/경로를 사용하도록 차트별 source override 지원
+4. `packages/appset-chart`에서 `backstage-already11`만 GitOps repo/경로를 사용하도록 차트별 source override 지원
    - `repoURLGit`, `repoURLGitRevision`, `repoURLGitBasePath`
    - `valuesPathName`, `additionalResourcesPathName`
 
@@ -91,9 +91,9 @@ apps/<app-name>/
 Backstage-kr 표준:
 
 ```text
-apps/backstage-kr/
+apps/backstage-already11/
   values.yaml
-  values-kr.yaml
+  values-already11.yaml
   kustomization.yaml
   manifests/
     external-secrets.yaml
@@ -102,7 +102,7 @@ apps/backstage-kr/
 
 CD 업데이트 대상:
 - `apps/<app-name>/manifests/deployment.yaml`의 `image:` 필드
-- `apps/backstage-kr/values-kr.yaml`의 `backstage.image.registry/repository/tag`
+- `apps/backstage-already11/values-already11.yaml`의 `backstage.image.registry/repository/tag`
 
 ---
 
@@ -117,7 +117,7 @@ CD 업데이트 대상:
 ### 6.2 `GITOPS_REPO_TOKEN` 사용처
 
 - Node/Java 생성 앱 CD
-- `backstage-app` CD
+- `backstage-already11` CD
 
 용도:
 - `SAMJOYAP/gitops` clone
@@ -192,11 +192,11 @@ CD 업데이트 대상:
 - `reference-implementation-aws`
   - `36e264d`: CD를 CI 성공 이후에만 실행하도록 변경
   - `0fae281`: Node/Java 템플릿 CD YAML heredoc 파싱 오류 수정
-  - `2085110`: `backstage-kr` ApplicationSet source를 GitOps repo 기반으로 전환
+  - `2085110`: `backstage-already11` ApplicationSet source를 GitOps repo 기반으로 전환
 - `gitops`
-  - `80a66f2`: `backstage-kr`를 values 기반 + external manifests 구조로 정리
-- `backstage-app`
-  - `3e34b7c`: `backstage-kr` 이미지 업데이트를 GitOps values 파일 갱신 방식으로 전환
+  - `80a66f2`: `backstage-already11`를 values 기반 + external manifests 구조로 정리
+- `backstage-already11`
+  - `3e34b7c`: `backstage-already11` 이미지 업데이트를 GitOps values 파일 갱신 방식으로 전환
 
 ---
 

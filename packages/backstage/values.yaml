@@ -11,7 +11,7 @@ backstage:
   replicas: 1
   image:
     registry: ghcr.io
-    repository: cnoe-io/backstage-app
+    repository: cnoe-io/backstage-already11
     tag: 135c0cb26f3e004a27a11edb6a4779035aff9805
     pullPolicy: IfNotPresent
   command: ["node", "packages/backend"]

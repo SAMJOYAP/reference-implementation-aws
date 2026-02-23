@@ -36,7 +36,7 @@ backstage:
     manifestPath: "path-routing"
     type: "manifests"
 
-backstage-kr:
+backstage-already11:
   enabled: true
   additionalResources:
   - path: true

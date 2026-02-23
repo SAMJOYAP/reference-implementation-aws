@@ -193,33 +193,33 @@ backstage:
         operator: In
         values: ['control-plane']
 
-backstage-kr:
+backstage-already11:
   enabled: true
   chartName: backstage
-  namespace: backstage-kr
-  releaseName: backstage-kr
+  namespace: backstage-already11
+  releaseName: backstage-already11
   ignoreDifferences:
     - kind: Namespace
-      name: backstage-kr
+      name: backstage-already11
       jsonPointers:
         - /metadata/annotations
         - /metadata/labels
   repoURLGit: "https://github.com/SAMJOYAP/gitops"
   repoURLGitRevision: "main"
   repoURLGitBasePath: "apps"
-  valuesPathName: "backstage-kr"
-  additionalResourcesPathName: "backstage-kr"
+  valuesPathName: "backstage-already11"
+  additionalResourcesPathName: "backstage-already11"
   defaultVersion: "2.6.0"
   chartRepository: "https://backstage.github.io/charts"
   valueFiles:
-  - "values-kr.yaml"
+  - "values-already11.yaml"
   valuesObject:
     ingress:
-      host: 'backstage-kr.{{ .metadata.annotations.domain }}'
+      host: 'bs.{{ .metadata.annotations.domain }}'
       path: '/'
       annotations:
         cert-manager.io/cluster-issuer: 'letsencrypt-prod'
-        external-dns.alpha.kubernetes.io/hostname: 'backstage-kr.{{ .metadata.annotations.domain }}'
+        external-dns.alpha.kubernetes.io/hostname: 'bs.{{ .metadata.annotations.domain }}'
     backstage:
       appConfig:
         catalog:
@@ -228,7 +228,7 @@ backstage-kr:
               target: '{{ .metadata.annotations.addons_repo_url }}/blob/{{ .metadata.annotations.addons_repo_revision }}/templates/backstage/catalog-info.yaml'
       extraEnvVars:
       - name: BACKSTAGE_FRONTEND_URL
-        value: 'https://backstage-kr.{{ .metadata.annotations.domain }}'
+        value: 'https://bs.{{ .metadata.annotations.domain }}'
       - name: NODE_OPTIONS
         value: '--no-node-snapshot'
       - name: KEYCLOAK_NAME_METADATA

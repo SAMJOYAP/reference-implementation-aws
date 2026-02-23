@@ -899,7 +899,7 @@ kubectl get applications -n argocd -o yaml > applications-backup.yaml
 
 # 특정 application 백업
 kubectl get application backstage-sesac-ref-impl -n argocd -o yaml \
-  > backstage-app-backup.yaml
+  > backstage-already11-backup.yaml
 ```
 
 #### Secrets Backup
