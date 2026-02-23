@@ -71,6 +71,12 @@ variable "kube_proxy_version" {
   default     = "v1.34.3-eksbuild.2"
 }
 
+variable "access_iam_usernames" {
+  description = "List of IAM usernames to grant cluster admin access via EKS access entries"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Common tags"
   type        = map(string)

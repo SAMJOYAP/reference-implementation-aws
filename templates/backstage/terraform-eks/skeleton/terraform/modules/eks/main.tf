@@ -40,6 +40,9 @@ resource "aws_security_group" "cluster" {
   tags = merge(var.tags, { Name = "${var.cluster_name}-cluster-sg" })
 }
 
+# Current AWS account ID
+data "aws_caller_identity" "current" {}
+
 # EKS Cluster
 resource "aws_eks_cluster" "main" {
   name     = var.cluster_name
@@ -51,6 +54,11 @@ resource "aws_eks_cluster" "main" {
     endpoint_private_access = true
     endpoint_public_access  = true
     security_group_ids      = [aws_security_group.cluster.id]
+  }
+
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   enabled_cluster_log_types = [
@@ -67,6 +75,33 @@ resource "aws_eks_cluster" "main" {
   ]
 
   tags = var.tags
+}
+
+# EKS Access Entries for IAM users
+resource "aws_eks_access_entry" "users" {
+  for_each = toset(var.access_iam_usernames)
+
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${each.value}"
+  type          = "STANDARD"
+
+  tags = var.tags
+
+  depends_on = [aws_eks_cluster.main]
+}
+
+resource "aws_eks_access_policy_association" "users" {
+  for_each = toset(var.access_iam_usernames)
+
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${each.value}"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+
+  depends_on = [aws_eks_access_entry.users]
 }
 
 # OIDC Provider for IRSA

@@ -31,6 +31,8 @@ module "eks" {
   node_max_size       = var.node_max_size
   node_instance_types = var.node_instance_types
 
+  access_iam_usernames = var.access_iam_usernames
+
   tags = local.tags
 
   depends_on = [module.vpc]

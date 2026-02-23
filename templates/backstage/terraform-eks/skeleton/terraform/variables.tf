@@ -51,3 +51,17 @@ variable "node_max_size" {
   type        = number
   default     = ${{ values.nodeMaxSize }}
 }
+
+variable "access_iam_usernames" {
+  description = "IAM usernames to grant EKS cluster admin access"
+  type        = list(string)
+  default = [
+    "cccr-03-mentor-01",
+    "cccr-03-mentee-01",
+    "cccr-03-mentee-02",
+    "cccr-03-mentee-03",
+    "cccr-03-mentee-04",
+    "cccr-03-mentee-05",
+    "cccr-03-mentee-06",
+  ]
+}
