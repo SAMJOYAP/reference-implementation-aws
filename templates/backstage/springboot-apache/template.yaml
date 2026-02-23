@@ -45,16 +45,19 @@ spec:
         groupId:
           type: string
           title: Group ID
+          description: Java 패키지 기준이 되는 groupId입니다. (예: com.example)
           default: com.example
         artifactId:
           type: string
           title: Artifact ID
+          description: 빌드 산출물 이름으로 사용할 artifactId입니다.
           default: app
     - title: 버전 및 빌드 옵션
       properties:
         javaVersion:
           type: string
           title: Java Version
+          description: 프로젝트 빌드와 실행에 사용할 Java 버전을 선택합니다.
           default: '21'
           enum:
             - '17'
@@ -63,6 +66,7 @@ spec:
         springBootVersion:
           type: string
           title: Spring Boot Version
+          description: 애플리케이션 프레임워크로 사용할 Spring Boot 버전입니다.
           default: 3.4.5
           enum:
             - 3.2.12
@@ -71,6 +75,7 @@ spec:
         gradleVersion:
           type: string
           title: Gradle Version
+          description: 프로젝트 빌드에 사용할 Gradle 버전입니다.
           default: '8.10.2'
           enum:
             - '8.8'
@@ -79,6 +84,7 @@ spec:
         packaging:
           type: string
           title: 패키징 방식
+          description: 배포 산출물 패키징 형식을 선택합니다.
           default: jar
           enum:
             - jar
@@ -86,14 +92,17 @@ spec:
         useActuator:
           type: boolean
           title: Spring Actuator 사용
+          description: 선택하면 상태 확인 및 메트릭 엔드포인트를 포함합니다.
           default: true
         useSpringWeb:
           type: boolean
           title: Spring Web 사용
+          description: 선택하면 REST API/웹 기능을 위한 Spring Web 의존성을 추가합니다.
           default: true
         useLombok:
           type: boolean
           title: Lombok 사용
+          description: 선택하면 Lombok 의존성을 추가해 보일러플레이트 코드를 줄입니다.
           default: false
     - title: 네트워크 옵션
       required:
@@ -102,18 +111,22 @@ spec:
         servicePort:
           type: number
           title: 서비스 포트
+          description: 클러스터 내부에서 서비스가 수신할 포트입니다.
           default: 80
         enableIngress:
           type: boolean
           title: Ingress 생성
+          description: 선택하면 외부 접근을 위한 Ingress 매니페스트를 생성합니다.
           default: true
         hostPrefix:
           type: string
           title: 호스트 접두사
+          description: 서브도메인 접두사입니다. 예: `java-test`
           pattern: '^[a-z0-9-]+$'
         baseDomain:
           type: string
           title: 기본 도메인
+          description: Ingress 호스트를 구성할 때 사용할 기본 도메인입니다.
           default: sesac.already11.cloud
     - title: 클라우드 배포 옵션
       properties:
