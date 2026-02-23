@@ -50,7 +50,7 @@ spec:
         groupId:
           type: string
           title: Group ID
-          description: Java 패키지 기준이 되는 groupId입니다. (예: com.example)
+          description: 'Java 패키지 기준이 되는 groupId입니다. (예: com.example)'
           default: com.example
         artifactId:
           type: string
@@ -124,7 +124,7 @@ spec:
         hostPrefix:
           type: string
           title: 호스트 접두사
-          description: 비우면 프로젝트 이름(projectName)을 자동으로 사용합니다. 예: `java-test`
+          description: '비우면 프로젝트 이름(projectName)을 자동으로 사용합니다. 예: `java-test`'
           pattern: '^[a-z0-9-]+$'
           ui:field: DefaultFromProjectText
           ui:options:

@@ -86,7 +86,7 @@ spec:
         hostPrefix:
           type: string
           title: 호스트 접두사
-          description: 비우면 프로젝트 이름(name)을 자동으로 사용합니다. 예: `node-test`
+          description: '비우면 프로젝트 이름(name)을 자동으로 사용합니다. 예: `node-test`'
           pattern: '^[a-z0-9-]+$'
           ui:field: DefaultFromProjectText
           ui:options:
