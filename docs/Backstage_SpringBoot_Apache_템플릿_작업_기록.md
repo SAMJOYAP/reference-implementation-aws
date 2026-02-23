@@ -356,7 +356,6 @@ Ingress host 형식:
 
 - `repoUrl` 입력을 `RepoUrlFromProjectPicker`로 변경
   - 레포지토리 이름 미입력 시 `projectName`을 repo 이름으로 자동 사용
-  - 프로젝트 이름 변경 시 repo placeholder 실시간 갱신
 - `hostPrefix` 입력을 선택값으로 변경
   - 미입력 시 `projectName`으로 자동 사용
   - 안내 문구에 자동 등록 동작 명시
