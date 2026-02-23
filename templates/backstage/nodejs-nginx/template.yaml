@@ -140,6 +140,7 @@ spec:
         projectName: ${{ parameters.argoProject }}
         destinationEksClusterName: ${{ parameters.eksCluster }}
         destinationEksClusterRegion: ap-northeast-2
+        hubClusterName: sesac-ref-impl
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.name }}
 
@@ -251,6 +252,7 @@ spec:
         projectName: ${{ parameters.argoProject }}
         destinationEksClusterName: ${{ parameters.eksCluster }}
         destinationEksClusterRegion: ap-northeast-2
+        hubClusterName: sesac-ref-impl
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.name }}
         cleanupOnFailure: true
