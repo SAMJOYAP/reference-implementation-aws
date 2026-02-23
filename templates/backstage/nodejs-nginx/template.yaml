@@ -111,6 +111,9 @@ spec:
           title: Argo CD Project
           description: Argo CD에 생성할 Application의 Project 이름입니다.
           default: default
+          ui:field: ArgoProjectPicker
+          ui:options:
+            argoInstance: in-cluster
 
   steps:
     - id: create-repo
