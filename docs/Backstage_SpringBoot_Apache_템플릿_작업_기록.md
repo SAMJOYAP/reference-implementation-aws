@@ -351,3 +351,19 @@ Ingress host 형식:
 - 사용자가 입력을 수정하면 수정값을 우선 사용
 - 안내 문구도 다음 의미로 통일:
   - "기본값은 프로젝트 이름이며, 필요하면 수정 가능"
+
+### 15.7 Repository/HostPrefix 기본값 자동화 (2026-02-23)
+
+- `repoUrl` 입력을 `RepoUrlFromProjectPicker`로 변경
+  - 레포지토리 이름 미입력 시 `projectName`을 repo 이름으로 자동 사용
+  - 프로젝트 이름 변경 시 repo placeholder 실시간 갱신
+- `hostPrefix` 입력을 선택값으로 변경
+  - 미입력 시 `projectName`으로 자동 사용
+  - 안내 문구에 자동 등록 동작 명시
+
+### 15.8 Argo CD Project 설명 문구 명확화 (2026-02-23)
+
+- 설명 문구를 아래 의미로 정리:
+  - "생성할 Application이 소속될 Argo CD Project를 선택합니다."
+- 혼동 포인트 정리:
+  - 이 값은 Application 이름이 아니라 `spec.project`를 결정함

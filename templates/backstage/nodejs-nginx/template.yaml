@@ -31,13 +31,14 @@ spec:
         repoUrl:
           title: 저장소 위치
           type: string
-          description: '중요: 개인 계정이 아닌 GitHub Organization 이름(예: SAMJOYAP)을 사용하세요.'
-          ui:field: RepoUrlPicker
+          description: '레포지토리 이름(선택)을 비우면 프로젝트 이름(name)으로 자동 등록됩니다.'
+          ui:field: RepoUrlFromProjectPicker
           ui:options:
             allowedHosts:
               - github.com
             allowedOwners:
               - SAMJOYAP
+            sourceField: name
         repoVisibility:
           type: string
           title: 저장소 공개 범위
@@ -71,8 +72,6 @@ spec:
           description: 선택하면 Express 서버 스캐폴드와 의존성이 자동으로 추가됩니다.
           default: false
     - title: 네트워크 옵션
-      required:
-        - hostPrefix
       properties:
         servicePort:
           type: number
@@ -87,8 +86,12 @@ spec:
         hostPrefix:
           type: string
           title: 호스트 접두사
-          description: '서브도메인 접두사입니다. 예: `node-test`'
+          description: 비우면 프로젝트 이름(name)을 자동으로 사용합니다. 예: `node-test`
           pattern: '^[a-z0-9-]+$'
+          ui:field: DefaultFromProjectText
+          ui:options:
+            sourceField: name
+            helperText: 호스트 접두사를 비우면 프로젝트 이름(name)으로 자동 등록됩니다.
         baseDomain:
           type: string
           title: 기본 도메인
@@ -110,13 +113,14 @@ spec:
           title: 대상 Namespace
           description: 기본값은 프로젝트 이름(name)이며, 필요하면 수정할 수 있습니다.
           pattern: '^[a-z0-9-]+$'
-          ui:field: DefaultNamespace
+          ui:field: DefaultFromProjectText
           ui:options:
             sourceField: name
+            helperText: 대상 Namespace를 비우면 프로젝트 이름(name)으로 자동 등록됩니다.
         argoProject:
           type: string
           title: Argo CD Project
-          description: Argo CD에 생성할 Application의 Project 이름입니다.
+          description: 생성할 Application이 소속될 Argo CD Project를 선택합니다.
           default: default
           ui:field: ArgoProjectPicker
           ui:options:
