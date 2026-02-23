@@ -306,3 +306,30 @@ Ingress host 형식:
 ### 15.5 문서 정합성 정리
 
 - README에서 `kubectl apply -f manifests/` 절차를 제거하고 GitOps 기반 운영으로 설명 통일
+
+---
+
+## 15. 최신 반영 사항 (2026-02-23)
+
+### 15.1 템플릿 한글화 적용
+
+- `template.yaml` 입력 항목/설명/실행 step 문구를 한글화했다.
+- 고유명사는 영어로 유지했다.
+  - `Java`, `Spring Boot`, `Gradle`, `Apache`, `GitHub`, `Argo CD`, `EKS`
+
+### 15.2 `catalog-info` 한글화 영향
+
+- 카탈로그 엔티티 설명/표시 문구가 한글로 노출된다.
+- 템플릿 동작(step/action)에는 영향이 없다.
+- 운영 Backstage가 최신 catalog source를 참조하지 않으면 UI에 보이지 않을 수 있다.
+
+### 15.3 EKS Cluster 선택 기능
+
+- 파라미터 `eksCluster` 추가
+- `ui:field: EksClusterPicker` 연결
+- 리전 기본값 `ap-northeast-2` 적용
+
+### 15.4 현재 상태
+
+- Java 템플릿 소스 반영 완료
+- 운영 노출 확인은 Backstage 배포 버전/카탈로그 소스 동기화 이후 진행 중

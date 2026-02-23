@@ -390,3 +390,39 @@ refusing to allow a GitHub App to create or update workflow
 
 - `scripts/lint.mjs`에서 `manifests/deployment.yaml` 필수 체크 제거
 - README의 `kubectl apply -f manifests/` 절차를 제거하고 GitOps 기반 운영으로 설명 통일
+
+---
+
+## 11. 최신 반영 사항 (2026-02-23)
+
+### 11.1 템플릿 한글화 적용
+
+- `template.yaml`의 사용자 입력 문구(title/description)와 step 이름을 한글화했다.
+- 고유명사는 영어로 유지했다.
+  - `Node.js`, `Express`, `Nginx`, `GitHub`, `Argo CD`, `EKS`
+
+### 11.2 `catalog-info` 한글화 반영 의미
+
+- `catalog-info.yaml` 한글화는 Template 메타데이터 설명/노출 문구를 바꾸는 작업이다.
+- 템플릿 실행 로직 자체는 변경되지 않는다.
+- 단, 실행 중인 Backstage가 최신 catalog source를 읽고 있어야 UI에서 변경이 보인다.
+
+### 11.3 EKS Cluster 선택 기능 반영
+
+- 파라미터 `eksCluster` 추가
+- `ui:field: EksClusterPicker` 연결
+- `ui:options.region: ap-northeast-2` 기본 설정
+
+### 11.4 실제 장애/수정 사례
+
+- YAML description에 `:` 포함 문자열 미인용으로 Catalog 파싱 오류 발생
+- 오류 예: `서브도메인 접두사입니다. 예: ...`
+- 조치: description 문자열을 인용 처리하여 해결 (`6420e06`)
+
+### 11.5 현재 상태
+
+- 템플릿 소스 반영 완료
+- 운영 화면 미노출 시 우선 점검 항목:
+  1. `backstage-already11` 배포 이미지 태그
+  2. catalog location override(`APP_CONFIG_*`)
+  3. Argo CD 동기화 상태

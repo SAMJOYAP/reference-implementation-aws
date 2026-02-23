@@ -229,3 +229,29 @@ CD 업데이트 대상:
   - 필수 시크릿 존재 여부
   - GitOps repo 접근 가능 여부
   - `apps/<app-name>` 경로 상태 점검
+
+---
+
+## 12. 템플릿 즉시 반영 자동화 (2026-02-23)
+
+추가 워크플로우:
+- `.github/workflows/backstage-template-fast-refresh.yaml`
+
+동작:
+1. `templates/backstage/**`가 `main`에 반영되면 자동 실행
+2. Backstage Catalog Location 재등록(`POST /api/catalog/locations`) 호출
+3. 가능하면 전역 refresh endpoint(`POST /api/catalog/refresh`)도 호출
+4. 템플릿 엔티티 smoke check 실행
+   - `template/default/nodejs-nginx-webapp`
+   - `template/default/springboot-gradle-apache`
+
+필수 GitHub 설정:
+- Repository Variables
+  - `BACKSTAGE_BASE_URL` (예: `https://bs.sesac.already11.cloud`)
+  - `CATALOG_LOCATION_URL` (미지정 시 기본값: `reference-implementation-aws` 템플릿 catalog URL)
+- Repository Secrets
+  - `BACKSTAGE_API_TOKEN` (Backstage Catalog API 호출 가능 토큰)
+
+운영 포인트:
+- `template.yaml`/`catalog-info.yaml`/skeleton 수정은 이 자동화로 빠르게 반영 가능
+- `EksClusterPicker` 같은 Backstage 앱 코드 변경은 별도로 `backstage-already11` 이미지 배포가 필요

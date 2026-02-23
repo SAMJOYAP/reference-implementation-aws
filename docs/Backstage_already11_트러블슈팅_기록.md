@@ -239,3 +239,33 @@ kubectl -n backstage-already11 logs deployment/backstage-already11 --tail=140
 - `https://sesac.already11.cloud/kr/` -> `backstage-already11`
 
 두 인스턴스는 네임스페이스/DB가 분리되어 동작하고, 외부 연동(Keycloak/GitHub/ArgoCD)은 공통 구성을 참조한다.
+
+---
+
+## 추가 트러블슈팅 (2026-02-23) - Keycloak `redirect_uri` 오류
+
+### 증상
+
+- `https://bs.sesac.already11.cloud`에서 Keycloak 로그인 버튼 클릭 시
+  `We are sorry... Invalid parameter: redirect_uri` 발생
+
+### 원인
+
+- Keycloak client 설정의 Redirect URI / Web Origins 값과
+  실제 Backstage 공개 도메인(`bs.sesac.already11.cloud`)이 불일치
+
+### 조치 체크리스트
+
+1. Keycloak client
+   - `Valid Redirect URIs`: `https://bs.sesac.already11.cloud/*`
+   - `Web Origins`: `https://bs.sesac.already11.cloud`
+2. Backstage 설정
+   - `app.baseUrl` 및 auth provider redirect URL이 동일 도메인 기준인지 확인
+3. Ingress 설정
+   - host/path와 Backstage 공개 URL 일치 여부 확인
+
+### 함께 확인한 연관 이슈
+
+- 템플릿 한글화/신규 필드(EKS picker) 미노출은 별도 이슈였다.
+- 원인: 실행 중인 Backstage catalog source가 최신 템플릿 저장소를 보지 않음.
+- 대응: `APP_CONFIG_*` 기반 catalog location override 적용.

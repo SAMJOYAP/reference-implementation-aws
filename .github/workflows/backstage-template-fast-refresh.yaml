@@ -1,0 +1,137 @@
+name: Backstage Template Fast Refresh
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - templates/backstage/**
+      - .github/workflows/backstage-template-fast-refresh.yaml
+  workflow_dispatch:
+
+concurrency:
+  group: backstage-template-fast-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh-and-smoke-check:
+    runs-on: ubuntu-latest
+    env:
+      BACKSTAGE_BASE_URL: ${{ vars.BACKSTAGE_BASE_URL }}
+      CATALOG_LOCATION_URL: ${{ vars.CATALOG_LOCATION_URL }}
+      BACKSTAGE_API_TOKEN: ${{ secrets.BACKSTAGE_API_TOKEN }}
+
+    steps:
+      - name: Resolve defaults
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BACKSTAGE_BASE_URL:-}" ]]; then
+            BACKSTAGE_BASE_URL="https://bs.sesac.already11.cloud"
+          fi
+
+          if [[ -z "${CATALOG_LOCATION_URL:-}" ]]; then
+            CATALOG_LOCATION_URL="https://github.com/SAMJOYAP/reference-implementation-aws/blob/main/templates/backstage/catalog-info.yaml"
+          fi
+
+          echo "BACKSTAGE_BASE_URL=${BACKSTAGE_BASE_URL%/}" >> "$GITHUB_ENV"
+          echo "CATALOG_LOCATION_URL=${CATALOG_LOCATION_URL}" >> "$GITHUB_ENV"
+
+      - name: Trigger catalog location refresh
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AUTH_HEADER=()
+          if [[ -n "${BACKSTAGE_API_TOKEN:-}" ]]; then
+            AUTH_HEADER=(-H "Authorization: Bearer ${BACKSTAGE_API_TOKEN}")
+          fi
+
+          payload=$(cat <<JSON
+          {
+            "type": "url",
+            "target": "${CATALOG_LOCATION_URL}"
+          }
+          JSON
+          )
+
+          code=$(curl -sS -o /tmp/location-refresh.out -w "%{http_code}" \
+            -X POST "${BACKSTAGE_BASE_URL}/api/catalog/locations" \
+            -H "Content-Type: application/json" \
+            "${AUTH_HEADER[@]}" \
+            -d "${payload}" || true)
+
+          echo "POST /api/catalog/locations -> HTTP ${code}"
+          cat /tmp/location-refresh.out || true
+
+          case "${code}" in
+            200|201|202|409)
+              echo "Location register/refresh request accepted."
+              ;;
+            *)
+              echo "Catalog location refresh failed (HTTP ${code})."
+              exit 1
+              ;;
+          esac
+
+      - name: Optional global refresh endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AUTH_HEADER=()
+          if [[ -n "${BACKSTAGE_API_TOKEN:-}" ]]; then
+            AUTH_HEADER=(-H "Authorization: Bearer ${BACKSTAGE_API_TOKEN}")
+          fi
+
+          curl -sS -o /tmp/global-refresh.out -w "HTTP %{http_code}\n" \
+            -X POST "${BACKSTAGE_BASE_URL}/api/catalog/refresh" \
+            -H "Content-Type: application/json" \
+            "${AUTH_HEADER[@]}" \
+            -d '{}' || true
+
+          cat /tmp/global-refresh.out || true
+
+      - name: Smoke check template entities
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AUTH_HEADER=()
+          if [[ -n "${BACKSTAGE_API_TOKEN:-}" ]]; then
+            AUTH_HEADER=(-H "Authorization: Bearer ${BACKSTAGE_API_TOKEN}")
+          fi
+
+          check_entity() {
+            local ref="$1"
+            local tries=18
+            local sleep_sec=10
+
+            for ((i=1; i<=tries; i++)); do
+              code=$(curl -sS -o /tmp/entity.out -w "%{http_code}" \
+                -X GET "${BACKSTAGE_BASE_URL}/api/catalog/entities/by-name/${ref}" \
+                "${AUTH_HEADER[@]}" || true)
+
+              if [[ "${code}" == "200" ]]; then
+                echo "Entity ${ref} is visible (try ${i})."
+                return 0
+              fi
+
+              echo "Entity ${ref} not ready yet (HTTP ${code}, try ${i}/${tries})."
+              sleep "${sleep_sec}"
+            done
+
+            echo "Smoke check failed for ${ref}. Last response:"
+            cat /tmp/entity.out || true
+            return 1
+          }
+
+          check_entity "template/default/nodejs-nginx-webapp"
+          check_entity "template/default/springboot-gradle-apache"
+
+      - name: Summary
+        run: |
+          echo "Backstage template refresh workflow finished."
+          echo "Base URL: ${BACKSTAGE_BASE_URL}"
+          echo "Catalog location: ${CATALOG_LOCATION_URL}"
