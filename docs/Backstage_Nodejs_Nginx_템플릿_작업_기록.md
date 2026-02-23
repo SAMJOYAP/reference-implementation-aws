@@ -426,3 +426,21 @@ refusing to allow a GitHub App to create or update workflow
   1. `backstage-already11` 배포 이미지 태그
   2. catalog location override(`APP_CONFIG_*`)
   3. Argo CD 동기화 상태
+
+### 11.6 클라우드/배포 옵션 통합 및 필수값 강화 (2026-02-23)
+
+- 기존 분리 섹션:
+  - `클라우드 배포 옵션`
+  - `배포 옵션`
+- 변경 후:
+  - `클라우드/배포 옵션` 단일 섹션으로 통합
+- `EKS Cluster`를 필수 입력으로 변경
+  - `required: [eksCluster]`
+
+### 11.7 대상 Namespace 기본값 UX 개선 (2026-02-23)
+
+- `targetNamespace` 입력 필드에 `DefaultNamespace` 커스텀 필드 적용
+- 초기값은 `name`(프로젝트 이름)으로 자동 채움
+- 사용자가 입력을 수정하면 수정값을 우선 사용
+- 안내 문구도 다음 의미로 통일:
+  - "기본값은 프로젝트 이름이며, 필요하면 수정 가능"
