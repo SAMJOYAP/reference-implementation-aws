@@ -146,6 +146,7 @@ spec:
           ui:field: EksClusterPicker
           ui:options:
             region: ap-northeast-2
+            hubClusterName: sesac-ref-impl
         targetNamespace:
           type: string
           title: 대상 Namespace
