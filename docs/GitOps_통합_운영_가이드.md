@@ -255,3 +255,22 @@ CD 업데이트 대상:
 운영 포인트:
 - `template.yaml`/`catalog-info.yaml`/skeleton 수정은 이 자동화로 빠르게 반영 가능
 - `EksClusterPicker` 같은 Backstage 앱 코드 변경은 별도로 `backstage-already11` 이미지 배포가 필요
+
+### 12.1 실운영 반영 결과 (2026-02-23)
+
+적용 완료:
+- GitHub `reference-implementation-aws` secret: `BACKSTAGE_API_TOKEN`
+- `gitops/apps/backstage-already11/values.yaml`
+  - `backend.auth.externalAccess` 설정 반영
+- `gitops/apps/backstage-already11/manifests/external-secrets.yaml`
+  - `BACKSTAGE_API_TOKEN` 주입 매핑 반영
+- `keycloak` namespace secret(`keycloak-clients`)에 `BACKSTAGE_API_TOKEN` 키 반영
+
+검증 결과:
+- `backstage-env-vars` secret에 `BACKSTAGE_API_TOKEN` 키 존재 확인
+- `backstage-already11` deployment 정상화 완료
+
+주의사항(중요):
+- `backstage-env-vars`는 `POSTGRES_PASSWORD`도 함께 관리한다.
+- secret 재생성 시 DB 사용자 비밀번호와 불일치하면 Backstage가 CrashLoop할 수 있으므로,
+  필요한 경우 PostgreSQL 사용자 비밀번호를 현재 secret 값으로 동기화해야 한다.
