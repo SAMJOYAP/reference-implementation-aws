@@ -21,8 +21,7 @@ spec:
       properties:
         name:
           type: string
-          description: EKS cluster name (lowercase, hyphens only)
-          pattern: '^[a-z0-9-]+$'
+          description: EKS cluster name
           ui:autofocus: true
         repoUrl:
           title: Repository Location
