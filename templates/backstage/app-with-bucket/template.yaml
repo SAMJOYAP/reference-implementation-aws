@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: golang
+    sesac.io/template-color: "#14B8A6"
+    sesac.io/template-stack: Go
   description: Adds a Go application with AWS resources
   name: app-with-aws-resources
   title: Add a Go App with AWS resources

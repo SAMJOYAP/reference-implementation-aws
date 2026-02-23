@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: ec2
+    sesac.io/template-color: "#F59E0B"
+    sesac.io/template-stack: EC2
   name: terraform-ec2
   title: Create EC2 Instance with Terraform
   description: Creates an EC2 instance using Terraform and GitHub Actions

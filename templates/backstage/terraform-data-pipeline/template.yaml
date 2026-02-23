@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: datapipeline
+    sesac.io/template-color: "#0D9488"
+    sesac.io/template-stack: Data Pipeline
   name: terraform-data-pipeline
   title: Create Data Pipeline (Glue/EMR) with Terraform
   description: Creates an AWS data pipeline with S3 Data Lake, Glue Catalog/Crawler/Job, optional EMR Spark cluster, KMS encryption, and CloudWatch logging

@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: dynamodb
+    sesac.io/template-color: "#7C3AED"
+    sesac.io/template-stack: DynamoDB
   name: terraform-dynamodb
   title: Create DynamoDB Table with Terraform
   description: Creates a DynamoDB table with optional GSI, TTL, PITR, Streams, Auto Scaling, and KMS encryption

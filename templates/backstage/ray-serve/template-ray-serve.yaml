@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: ray
+    sesac.io/template-color: "#7C3AED"
+    sesac.io/template-stack: Ray
   description: Creates Ray Service on Kubernetes
   name: ray-serve-kubernetes
   title: Ray Service on Kubernetes

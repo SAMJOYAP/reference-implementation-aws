@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: nodejs
+    sesac.io/template-color: "#3C873A"
+    sesac.io/template-stack: Node.js
   name: nodejs-nginx-webapp
   title: Node.js 웹 앱 (Nginx + 선택형 Express)
   description: Nginx로 서비스되는 Node.js 웹 프로젝트를 생성하며, 필요 시 Express 설정과 GitHub Actions CI를 함께 구성합니다.

@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: rds
+    sesac.io/template-color: "#2563EB"
+    sesac.io/template-stack: RDS
   name: terraform-rds
   title: Create RDS Database with Terraform
   description: Creates an RDS instance (PostgreSQL/MySQL/Aurora) with Multi-AZ, Performance Insights, CloudWatch Logs, and Secrets Manager integration

@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: workflow
+    sesac.io/template-color: "#F97316"
+    sesac.io/template-stack: Argo Workflows
   description: Creates a Basic Kubernetes Deployment
   name: argo-workflows-basic
   title: Basic Argo Workflow with a Spark Job

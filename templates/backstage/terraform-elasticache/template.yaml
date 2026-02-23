@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: elasticache
+    sesac.io/template-color: "#DC2626"
+    sesac.io/template-stack: ElastiCache
   name: terraform-elasticache
   title: Create ElastiCache Redis with Terraform
   description: Creates an ElastiCache Redis cluster with optional Cluster Mode, Multi-AZ, TLS/AUTH, snapshots, and CloudWatch alarms

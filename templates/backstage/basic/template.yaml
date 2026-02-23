@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: kubernetes
+    sesac.io/template-color: "#0EA5E9"
+    sesac.io/template-stack: Kubernetes
   description: Creates a Basic Kubernetes Deployment
   name: basic
   title: Create a Basic Deployment

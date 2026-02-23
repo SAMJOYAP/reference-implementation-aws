@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: eks
+    sesac.io/template-color: "#0EA5E9"
+    sesac.io/template-stack: EKS
   name: terraform-eks
   title: Create EKS Cluster with Terraform
   description: Creates an EKS cluster with VPC (public/private subnets, NAT GW), managed node group, core addons (EBS CSI, VPC CNI, CoreDNS, kube-proxy), and IRSA roles for AWS Load Balancer Controller and Fluent Bit

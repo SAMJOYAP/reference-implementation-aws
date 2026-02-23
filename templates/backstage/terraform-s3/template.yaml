@@ -1,6 +1,10 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
+  annotations:
+    sesac.io/template-icon: s3
+    sesac.io/template-color: "#0284C7"
+    sesac.io/template-stack: S3
   name: terraform-s3
   title: Create S3 Bucket with Terraform
   description: Creates an S3 bucket with optional versioning, KMS encryption, lifecycle rules, access logging, and static website hosting
