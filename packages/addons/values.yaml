@@ -229,6 +229,8 @@ backstage-already11:
       extraEnvVars:
       - name: BACKSTAGE_FRONTEND_URL
         value: 'https://bs.{{ .metadata.annotations.domain }}'
+      - name: APP_CONFIG_catalog_locations
+        value: '[{"type":"url","target":"https://github.com/SAMJOYAP/reference-implementation-aws/blob/main/templates/backstage/catalog-info.yaml"}]'
       - name: NODE_OPTIONS
         value: '--no-node-snapshot'
       - name: KEYCLOAK_NAME_METADATA
