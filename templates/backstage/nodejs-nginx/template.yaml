@@ -207,6 +207,8 @@ spec:
         appNamespace: ${{ parameters.name }}
         argoInstance: in-cluster
         projectName: default
+        destinationEksClusterName: ${{ parameters.eksCluster }}
+        destinationEksClusterRegion: ap-northeast-2
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.name }}
         cleanupOnFailure: true
