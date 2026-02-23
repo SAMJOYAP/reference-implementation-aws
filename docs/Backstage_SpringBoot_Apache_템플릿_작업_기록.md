@@ -366,3 +366,15 @@ Ingress host 형식:
   - "생성할 Application이 소속될 Argo CD Project를 선택합니다."
 - 혼동 포인트 정리:
   - 이 값은 Application 이름이 아니라 `spec.project`를 결정함
+
+### 15.9 ArgoCD preflight 선행 + 허브/비허브 배포 경로 정리 (2026-02-23)
+
+- 템플릿 step에서 `create-repo` 이전에 `ArgoCD 사전 검증` 단계 추가
+  - 검증 실패 시 repo/ECR 생성 전에 중단
+- 허브 클러스터(`sesac-ref-impl`) 선택 시
+  - destination server를 `https://kubernetes.default.svc`로 강제 매핑
+- 허브 외 클러스터 선택 시
+  - Argo CD 등록 여부 확인
+  - 미등록이면 자동 등록 시도
+  - 이미 등록되어 있으면 skip
+  - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
