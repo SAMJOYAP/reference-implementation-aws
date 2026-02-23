@@ -99,6 +99,18 @@ spec:
           ui:field: EksClusterPicker
           ui:options:
             region: ap-northeast-2
+    - title: 배포 옵션
+      properties:
+        targetNamespace:
+          type: string
+          title: 대상 Namespace
+          description: 비워두면 프로젝트 이름(name)을 Namespace로 사용합니다.
+          pattern: '^[a-z0-9-]+$'
+        argoProject:
+          type: string
+          title: Argo CD Project
+          description: Argo CD에 생성할 Application의 Project 이름입니다.
+          default: default
 
   steps:
     - id: create-repo
@@ -204,9 +216,9 @@ spec:
       action: cnoe:create-argocd-app
       input:
         appName: ${{ parameters.name }}
-        appNamespace: ${{ parameters.name }}
+        appNamespace: ${{ parameters.targetNamespace || parameters.name }}
         argoInstance: in-cluster
-        projectName: default
+        projectName: ${{ parameters.argoProject }}
         destinationEksClusterName: ${{ parameters.eksCluster }}
         destinationEksClusterRegion: ap-northeast-2
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
