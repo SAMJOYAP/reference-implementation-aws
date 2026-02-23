@@ -127,6 +127,20 @@ spec:
             argoInstance: in-cluster
 
   steps:
+    - id: preflight-argocd
+      name: ArgoCD 사전 검증
+      action: cnoe:create-argocd-app
+      input:
+        preflightOnly: true
+        appName: ${{ parameters.name }}
+        appNamespace: ${{ parameters.targetNamespace || parameters.name }}
+        argoInstance: in-cluster
+        projectName: ${{ parameters.argoProject }}
+        destinationEksClusterName: ${{ parameters.eksCluster }}
+        destinationEksClusterRegion: ap-northeast-2
+        repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
+        path: apps/${{ parameters.name }}
+
     - id: create-repo
       name: 저장소 생성
       action: github:repo:create
