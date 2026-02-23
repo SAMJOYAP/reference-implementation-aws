@@ -90,10 +90,12 @@ spec:
           title: 기본 도메인
           description: Ingress 호스트를 구성할 때 사용할 기본 도메인
           default: sesac.already11.cloud
+    - title: 클라우드 배포 옵션
+      properties:
         eksCluster:
           type: string
           title: EKS Cluster
-          description: 배포 대상 EKS 클러스터를 선택합니다.
+          description: 배포 대상 EKS 클러스터를 선택합니다. (향후 VPC/서브넷 선택 항목 확장 예정)
           ui:field: EksClusterPicker
           ui:options:
             region: ap-northeast-2
