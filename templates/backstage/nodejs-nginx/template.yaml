@@ -83,7 +83,7 @@ spec:
         hostPrefix:
           type: string
           title: 호스트 접두사
-          description: 서브도메인 접두사입니다. 예: `node-test`
+          description: '서브도메인 접두사입니다. 예: `node-test`'
           pattern: '^[a-z0-9-]+$'
         baseDomain:
           type: string
