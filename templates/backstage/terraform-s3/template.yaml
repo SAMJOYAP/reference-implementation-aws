@@ -124,6 +124,7 @@ spec:
       input:
         repoUrl: ${{ parameters.repoUrl }}
         description: 'S3 bucket "${{ parameters.name }}" managed by Terraform'
+        repoVisibility: public
         topics:
           - terraform
           - aws
