@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - templates/backstage/**
+      - packages/keycloak/**
       - .github/workflows/backstage-template-fast-refresh.yaml
   workflow_dispatch:
 
