@@ -274,3 +274,22 @@ CD 업데이트 대상:
 - `backstage-env-vars`는 `POSTGRES_PASSWORD`도 함께 관리한다.
 - secret 재생성 시 DB 사용자 비밀번호와 불일치하면 Backstage가 CrashLoop할 수 있으므로,
   필요한 경우 PostgreSQL 사용자 비밀번호를 현재 secret 값으로 동기화해야 한다.
+
+### 12.2 EKS Picker IAM 요구사항 (운영 반영)
+
+EKS Cluster Picker는 Backstage backend 컨테이너에서 AWS CLI 호출로 동작하므로,
+실행 주체 IAM에 아래 읽기 권한이 필요하다.
+
+필수 권한:
+- `eks:ListClusters`
+- `eks:DescribeCluster`
+
+확장 권한(향후 VPC/Subnet picker 대비):
+- `ec2:DescribeVpcs`
+- `ec2:DescribeSubnets`
+- `ec2:DescribeRouteTables`
+- `ec2:DescribeSecurityGroups`
+
+운영 사례:
+- 권한 누락 시 `/api/eks/clusters`가 500을 반환하며,
+  로그에 `AccessDeniedException`이 기록된다.

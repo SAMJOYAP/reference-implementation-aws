@@ -269,3 +269,41 @@ kubectl -n backstage-already11 logs deployment/backstage-already11 --tail=140
 - 템플릿 한글화/신규 필드(EKS picker) 미노출은 별도 이슈였다.
 - 원인: 실행 중인 Backstage catalog source가 최신 템플릿 저장소를 보지 않음.
 - 대응: `APP_CONFIG_*` 기반 catalog location override 적용.
+
+---
+
+## 추가 트러블슈팅 (2026-02-23 밤) - EKS Cluster Picker 조회 실패
+
+### 증상
+
+- 템플릿에서 EKS Cluster 선택 시 아래 오류 노출:
+  - `EKS 클러스터의 목록을 불러오지 못했습니다`
+  - API 응답: `Failed to list EKS clusters`
+
+### 백엔드 로그 원인
+
+- `aws eks list-clusters --region ap-northeast-2 --output json` 실행 시
+  `AccessDeniedException` 발생
+- 실제 주체:
+  - `arn:aws:sts::710232982381:assumed-role/eksctl-sesac-ref-impl-nodegroup-ma-NodeInstanceRole-umkIA5oV1lIu/...`
+- 결론:
+  - AWS CLI 설치 문제가 아니라 IAM 권한 부족 이슈
+
+### 조치
+
+1. 해당 IAM 역할에 EKS/EC2 조회 권한 추가(inline policy)
+   - `eks:ListClusters`
+   - `eks:DescribeCluster`
+   - `ec2:DescribeVpcs`
+   - `ec2:DescribeSubnets`
+   - `ec2:DescribeRouteTables`
+   - `ec2:DescribeSecurityGroups`
+2. Backstage 파드 재시작 후 재검증
+3. 파드 내부에서 `aws eks list-clusters` 성공 확인
+
+### 결과
+
+- EKS picker 목록 조회 정상화
+- 확인된 클러스터 예시:
+  - `sesac-ref-impl`
+  - `toy-practice-eks`
