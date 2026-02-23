@@ -427,10 +427,26 @@ spec:
               add_client_scope "argo-workflows" "Argo Workflows"
               get_client_secret "argo-workflows" "ARGO_WORKFLOWS_CLIENT_SECRET"
 
-              echo "Creating ArgoCD session token for backstage"
+              echo "Creating ArgoCD tokens for backstage"
               ARGOCD_PASSWORD=$(./kubectl -n argocd get secret argocd-initial-admin-secret -o go-template='{{.data.password | base64decode }}')
               
-              ARGOCD_SESSION_TOKEN=$(curl -k -sS http://argocd-server.argocd.svc.cluster.local:443/argocd/api/v1/session -H 'Content-Type: application/json' -d "{\"username\":\"admin\",\"password\":\"${ARGOCD_PASSWORD}\"}" | jq -r .token)
+              ARGOCD_ADMIN_SESSION_TOKEN=$(curl -k -sS http://argocd-server.argocd.svc.cluster.local:443/argocd/api/v1/session -H 'Content-Type: application/json' -d "{\"username\":\"admin\",\"password\":\"${ARGOCD_PASSWORD}\"}" | jq -r .token)
+              if [ -z "${ARGOCD_ADMIN_SESSION_TOKEN}" ] || [ "${ARGOCD_ADMIN_SESSION_TOKEN}" = "null" ]; then
+                echo "Failed to create ArgoCD admin session token"
+                exit 1
+              fi
+
+              # Create a non-expiring API token for backstage account.
+              ARGOCD_SESSION_TOKEN=$(curl -k -sS \
+                -H "Authorization: Bearer ${ARGOCD_ADMIN_SESSION_TOKEN}" \
+                -H 'Content-Type: application/json' \
+                -X POST \
+                -d '{"id":"backstage-api","expiresIn":0}' \
+                http://argocd-server.argocd.svc.cluster.local:443/argocd/api/v1/account/backstage/token | jq -r .token)
+              if [ -z "${ARGOCD_SESSION_TOKEN}" ] || [ "${ARGOCD_SESSION_TOKEN}" = "null" ]; then
+                echo "Failed to create ArgoCD backstage API token"
+                exit 1
+              fi
 
               echo "Creating keycloak-clients secret"
               

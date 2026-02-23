@@ -293,3 +293,28 @@ EKS Cluster Picker는 Backstage backend 컨테이너에서 AWS CLI 호출로 동
 운영 사례:
 - 권한 누락 시 `/api/eks/clusters`가 500을 반환하며,
   로그에 `AccessDeniedException`이 기록된다.
+
+### 12.3 Argo CD RBAC 및 토큰 운영 (2026-02-23)
+
+Backstage Scaffolder의 Argo preflight를 안전하게 통과시키려면,
+Argo CD에서 `backstage` 계정에 아래 권한이 필요하다.
+
+```csv
+p, role:backstage, applications, get, */*, allow
+p, role:backstage, applications, list, */*, allow
+p, role:backstage, projects, get, *, allow
+p, role:backstage, projects, list, *, allow
+p, role:backstage, clusters, get, *, allow
+p, role:backstage, clusters, list, *, allow
+p, role:backstage, clusters, create, *, allow
+g, backstage, role:backstage
+```
+
+추가 반영:
+- `packages/keycloak/manifests/user-sso-config-job.yaml`
+  - 기존 `admin session token` 저장 방식 대신
+    `backstage` 계정용 non-expiring API token 생성 후 `ARGOCD_SESSION_TOKEN`으로 저장
+
+효과:
+- 조회 권한 부족(`permission denied`)으로 preflight가 중단되는 문제를 방지
+- 비허브 EKS 선택 시 cluster auto-register 흐름까지 정상 동작
