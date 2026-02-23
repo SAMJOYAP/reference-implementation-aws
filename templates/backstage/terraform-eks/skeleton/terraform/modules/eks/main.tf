@@ -77,31 +77,68 @@ resource "aws_eks_cluster" "main" {
   tags = var.tags
 }
 
-# EKS Access Entries for IAM users
-resource "aws_eks_access_entry" "users" {
-  for_each = toset(var.access_iam_usernames)
+# Current AWS region
+data "aws_region" "current" {}
 
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${each.value}"
-  type          = "STANDARD"
-
-  tags = var.tags
-
-  depends_on = [aws_eks_cluster.main]
-}
-
-resource "aws_eks_access_policy_association" "users" {
-  for_each = toset(var.access_iam_usernames)
-
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${each.value}"
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
+# EKS Access Entries for IAM users (idempotent via AWS CLI)
+# aws_eks_access_entry Terraform 리소스 대신 null_resource + CLI 사용:
+# Terraform state가 유실되어 재실행해도 이미 존재하는 entry에서 실패하지 않음
+resource "null_resource" "eks_access_entries" {
+  triggers = {
+    cluster_name = aws_eks_cluster.main.name
+    account_id   = data.aws_caller_identity.current.account_id
+    region       = data.aws_region.current.name
+    users        = join(",", sort(var.access_iam_usernames))
   }
 
-  depends_on = [aws_eks_access_entry.users]
+  provisioner "local-exec" {
+    environment = {
+      CLUSTER    = aws_eks_cluster.main.name
+      ACCOUNT_ID = data.aws_caller_identity.current.account_id
+      REGION     = data.aws_region.current.name
+      USERS      = join(" ", var.access_iam_usernames)
+      POLICY     = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+    }
+    command = <<-EOT
+      for USER in $USERS; do
+        PRINCIPAL_ARN="arn:aws:iam://$ACCOUNT_ID:user/$USER"
+        echo ">>> Processing: $USER"
+        aws eks create-access-entry \
+          --cluster-name "$CLUSTER" \
+          --principal-arn "$PRINCIPAL_ARN" \
+          --region "$REGION" 2>/dev/null || echo "  already exists, skipping create"
+        aws eks associate-access-policy \
+          --cluster-name "$CLUSTER" \
+          --principal-arn "$PRINCIPAL_ARN" \
+          --policy-arn "$POLICY" \
+          --access-scope type=cluster \
+          --region "$REGION"
+        echo "  done"
+      done
+    EOT
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+    environment = {
+      CLUSTER    = self.triggers.cluster_name
+      ACCOUNT_ID = self.triggers.account_id
+      REGION     = self.triggers.region
+      USERS      = replace(self.triggers.users, ",", " ")
+    }
+    command = <<-EOT
+      for USER in $USERS; do
+        PRINCIPAL_ARN="arn:aws:iam://$ACCOUNT_ID:user/$USER"
+        echo ">>> Removing access entry: $USER"
+        aws eks delete-access-entry \
+          --cluster-name "$CLUSTER" \
+          --principal-arn "$PRINCIPAL_ARN" \
+          --region "$REGION" 2>/dev/null || echo "  not found, skipping"
+      done
+    EOT
+  }
+
+  depends_on = [aws_eks_cluster.main]
 }
 
 # OIDC Provider for IRSA
