@@ -288,7 +288,7 @@ spec:
 
     - id: template-gradle-overlay
       if: ${{ parameters.buildTool == 'gradle' }}
-      name: Gradle 오버레이 적용
+      name: 빌드 도구 오버레이 적용
       action: fetch:template
       input:
         url: ./skeleton-gradle
