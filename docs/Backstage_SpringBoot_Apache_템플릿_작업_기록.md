@@ -406,6 +406,22 @@ Ingress host 형식:
   - `CRITICAL`만 차단, `exit-code: 1`
 - 결과:
   - HIGH는 리포트로 관리하고, CRITICAL만 배포 차단
+
+### 16.4 신규 앱 도메인 접속 불가 이슈(`java-sec-test`) 대응
+
+- 증상:
+  - Pod/Service/Ingress는 정상이나 `https://java-sec-test.sesac.already11.cloud` 접속 실패
+  - cert-manager challenge가 `NXDOMAIN`으로 pending 유지
+- 확인:
+  - Route53 레코드(`A/AAAA`)는 생성 완료
+  - 클러스터 내부 DNS(CoreDNS) 조회만 `NXDOMAIN` 발생
+- 원인:
+  - CoreDNS self-check 경로에서 DNS 전파 직후 음수 캐시(NXDOMAIN)가 남아 HTTP-01 검증 지연
+- 조치:
+  - `kube-system`의 `coredns` rollout restart
+  - cert-manager 재검증 후 `Certificate Ready=True`, `Order valid` 전환
+- 결과:
+  - HTTPS 응답 `HTTP/2 200` 확인
   - 이미 등록되어 있으면 skip
   - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
 
