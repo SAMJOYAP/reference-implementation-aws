@@ -223,8 +223,7 @@ spec:
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.projectName }}
 
-    - id: create-repo-gradle
-      if: ${{ parameters.buildTool == 'gradle' }}
+    - id: create-repo
       name: 저장소 생성
       action: github:repo:create
       input:
@@ -233,28 +232,10 @@ spec:
         allowAutoMerge: true
         allowSquashMerge: true
         deleteBranchOnMerge: true
-        description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
+        description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + ${{ parameters.buildTool | upper }})
         topics:
           - spring-boot
-          - gradle
-          - java
-          - apache
-          - backstage
-
-    - id: create-repo-maven
-      if: ${{ parameters.buildTool == 'maven' }}
-      name: 저장소 생성
-      action: github:repo:create
-      input:
-        repoUrl: ${{ parameters.repoUrl }}
-        repoVisibility: ${{ parameters.repoVisibility }}
-        allowAutoMerge: true
-        allowSquashMerge: true
-        deleteBranchOnMerge: true
-        description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Maven)
-        topics:
-          - spring-boot
-          - maven
+          - ${{ parameters.buildTool }}
           - java
           - apache
           - backstage
@@ -369,6 +350,7 @@ spec:
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: /catalog-info.yaml
+        optional: true
 
     - id: create-argocd-app
       name: ArgoCD App 생성
