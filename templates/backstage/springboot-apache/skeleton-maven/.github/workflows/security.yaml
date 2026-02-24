@@ -88,7 +88,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
+          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN_SEC_OPS }}{% endraw %}
           aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
 
       - name: Ensure ECR repository exists
