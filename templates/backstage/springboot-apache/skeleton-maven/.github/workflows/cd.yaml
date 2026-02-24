@@ -1,0 +1,319 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["Security / DevSecOps Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  preflight:
+    name: Preflight Checks
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+      APP_NAME: ${{ values.projectName }}
+      AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
+      AWS_ROLE_ARN: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
+      GITOPS_REPO_TOKEN: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in AWS_REGION AWS_ROLE_ARN GITOPS_REPO_TOKEN; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: ${key}"
+              exit 1
+            fi
+          done
+
+      - name: Validate GitOps repository access
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-remote "https://x-access-token:${GITOPS_REPO_TOKEN}@github.com/${GITOPS_REPO}.git" HEAD >/dev/null
+
+      - name: Validate app directory state in GitOps repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 "https://x-access-token:${GITOPS_REPO_TOKEN}@github.com/${GITOPS_REPO}.git" gitops-repo
+          if [ -d "gitops-repo/apps/${APP_NAME}" ]; then
+            echo "GitOps app path exists: apps/${APP_NAME} (update mode)"
+          else
+            echo "GitOps app path does not exist yet: apps/${APP_NAME} (bootstrap mode)"
+          fi
+
+  publish-ecr:
+    name: Build and Push to ECR
+    if: github.event.workflow_run.conclusion == 'success'
+    needs: preflight
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: read
+    env:
+      AWS_REGION: {% raw %}${{ secrets.AWS_REGION }}{% endraw %}
+      ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
+      GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+      APP_NAME: ${{ values.projectName }}
+      APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: {% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '${{ values.javaVersion }}'
+
+      - name: Build artifact
+        run: mvn -B -DskipTests package
+
+      - name: Resolve image version from git tag
+        id: version
+        shell: bash
+        run: |
+          if git tag --list | grep -q .; then
+            VERSION_TAG="$(git describe --tags --always --dirty=-dev)"
+            VERSION_TAG="${VERSION_TAG#v}"
+          else
+            VERSION_TAG="1.0.0"
+          fi
+          SHA_TAG="{% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}"
+          SHA_TAG="${SHA_TAG::7}"
+          echo "version_tag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Normalize runtime artifact
+        shell: bash
+        run: |
+          APP_FILE="$(find target -maxdepth 1 -type f \( -name '*.jar' -o -name '*.war' \) | head -n 1)"
+          if [ -z "$APP_FILE" ]; then
+            echo "No jar/war artifact found in target"
+            exit 1
+          fi
+          cp "$APP_FILE" target/app-runtime.jar
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
+          aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
+
+      - name: Ensure ECR repository exists
+        shell: bash
+        run: |
+          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
+          aws ecr create-repository --repository-name "$ECR_REPOSITORY" >/dev/null
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
+          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
+          SHA_TAG: {% raw %}${{ steps.version.outputs.sha_tag }}{% endraw %}
+        run: |
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY"
+          docker build -t "$IMAGE_URI:$VERSION_TAG" -t "$IMAGE_URI:$SHA_TAG" .
+          docker push "$IMAGE_URI:$VERSION_TAG"
+          docker push "$IMAGE_URI:$SHA_TAG"
+
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
+          token: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          ref: main
+          path: gitops-repo
+
+      - name: Bootstrap app manifests in GitOps repo
+        shell: bash
+        run: |
+          APP_DIR="gitops-repo/apps/$APP_NAME"
+          MANIFEST_DIR="$APP_DIR/manifests"
+          mkdir -p "$MANIFEST_DIR"
+          ROOT_KUSTOMIZATION="gitops-repo/apps/kustomization.yaml"
+
+          if [ ! -f "$ROOT_KUSTOMIZATION" ]; then
+            cat > "$ROOT_KUSTOMIZATION" <<YAML
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+          YAML
+          fi
+
+          if ! grep -Eq "^[[:space:]]*-[[:space:]]+$APP_NAME$" "$ROOT_KUSTOMIZATION"; then
+            echo "  - $APP_NAME" >> "$ROOT_KUSTOMIZATION"
+          fi
+
+          if [ ! -f "$APP_DIR/kustomization.yaml" ]; then
+            cat > "$APP_DIR/kustomization.yaml" <<YAML
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - manifests/namespace.yaml
+            - manifests/service.yaml
+            - manifests/deployment.yaml
+            - manifests/ingress.yaml
+          YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/namespace.yaml" ]; then
+            cat > "$MANIFEST_DIR/namespace.yaml" <<YAML
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/service.yaml" ]; then
+            cat > "$MANIFEST_DIR/service.yaml" <<YAML
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          spec:
+            selector:
+              app.kubernetes.io/name: $APP_NAME
+            ports:
+              - name: http
+                port: 80
+                targetPort: 8080
+                protocol: TCP
+            type: ClusterIP
+          YAML
+          fi
+
+          if [ ! -f "$MANIFEST_DIR/deployment.yaml" ]; then
+            cat > "$MANIFEST_DIR/deployment.yaml" <<YAML
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            labels:
+              app.kubernetes.io/name: $APP_NAME
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: $APP_NAME
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: $APP_NAME
+              spec:
+                containers:
+                  - name: app
+                    image: httpd:2.4-alpine
+                    imagePullPolicy: IfNotPresent
+                    ports:
+                      - containerPort: 8080
+          YAML
+          fi
+
+          # Keep Spring Boot traffic wiring consistent for both new and existing apps.
+          sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
+          sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
+
+          if [ ! -f "$MANIFEST_DIR/ingress.yaml" ]; then
+            cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          spec:
+            ingressClassName: nginx
+            rules:
+              - host: $APP_HOST
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: $APP_NAME
+                          port:
+                            number: 80
+            tls:
+              - hosts:
+                  - $APP_HOST
+                secretName: $APP_NAME-tls
+          YAML
+          fi
+
+      - name: Update GitOps deployment image tag
+        env:
+          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
+          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
+        shell: bash
+        run: |
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
+          DEPLOYMENT_FILE="gitops-repo/apps/$APP_NAME/manifests/deployment.yaml"
+          sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" "$DEPLOYMENT_FILE"
+
+      - name: Check GitOps manifest changes
+        id: manifest_changes
+        shell: bash
+        run: |
+          if [ -z "$(git -C gitops-repo status --porcelain -- "apps/$APP_NAME")" ]; then
+            echo "No manifest changes detected."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -C gitops-repo status --short -- "apps/$APP_NAME"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request in GitOps repo
+        id: create_pr
+        if: steps.manifest_changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          path: gitops-repo
+          commit-message: "chore(cd): update ${{ values.projectName }} image tag [skip ci]"
+          title: "chore(cd): update ${{ values.projectName }} image tag"
+          body: |
+            Automated GitOps manifest update from `${{ values.projectName }}` CD workflow.
+          branch: chore/cd-update-image-${{ values.projectName }}
+          base: main
+          delete-branch: true
+          add-paths: |
+            apps/${{ values.projectName }}/kustomization.yaml
+            apps/${{ values.projectName }}/manifests/namespace.yaml
+            apps/${{ values.projectName }}/manifests/service.yaml
+            apps/${{ values.projectName }}/manifests/deployment.yaml
+            apps/${{ values.projectName }}/manifests/ingress.yaml
+
+      - name: Enable auto-merge for GitOps PR
+        if: steps.manifest_changes.outputs.changed == 'true' && steps.create_pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: {% raw %}${{ secrets.GITOPS_REPO_TOKEN }}{% endraw %}
+          PR_NUMBER: {% raw %}${{ steps.create_pr.outputs.pull-request-number }}{% endraw %}
+        shell: bash
+        run: |
+          if ! gh pr merge "$PR_NUMBER" --auto --squash --repo "$GITOPS_REPO"; then
+            echo "Auto-merge is unavailable. Trying immediate squash merge."
+            gh pr merge "$PR_NUMBER" --squash --repo "$GITOPS_REPO" || \
+              echo "Merge is still pending. Please merge PR #$PR_NUMBER manually."
+          fi

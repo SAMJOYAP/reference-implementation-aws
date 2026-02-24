@@ -26,7 +26,8 @@ mvn spring-boot:run
 Deployment manifests are managed in the GitOps repository.
 
 ## CI/CD
-- Pipeline: `.github/workflows/ci.yaml` (`DevSecOps Pipeline`)
+- CI: `.github/workflows/ci.yaml` (`CI`)
+- Security: `.github/workflows/security.yaml` (`Security / DevSecOps Pipeline`)
+- CD: `.github/workflows/cd.yaml` (`CD`, triggers after Security workflow success on `main`)
 - Includes: SonarQube SAST/SCA, Trivy image scan, SBOM, Cosign sign/verify, ECR push
 - Required secrets: `AWS_ROLE_ARN`, `SONAR_TOKEN`, `SONAR_HOST_URL`
-

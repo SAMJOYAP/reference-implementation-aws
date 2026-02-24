@@ -2,10 +2,8 @@ FROM eclipse-temurin:${{ values.javaVersion }}-jre
 
 WORKDIR /app
 
-# Maven build artifact
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} /app/app.jar
+# Normalized by workflow from target/*.jar or target/*.war
+COPY target/app-runtime.jar /app/app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-

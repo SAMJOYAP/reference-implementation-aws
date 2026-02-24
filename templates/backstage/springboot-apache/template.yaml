@@ -113,6 +113,15 @@ spec:
           title: Lombok 사용
           description: 선택하면 Lombok 의존성을 추가해 보일러플레이트 코드를 줄입니다.
           default: false
+      ui:order:
+        - buildTool
+        - gradleVersion
+        - javaVersion
+        - springBootVersion
+        - packaging
+        - useActuator
+        - useSpringWeb
+        - useLombok
       dependencies:
         buildTool:
           oneOf:
