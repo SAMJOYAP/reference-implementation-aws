@@ -6,11 +6,12 @@ metadata:
     sesac.io/template-color: "#EA6A47"
     sesac.io/template-stack: Java
   name: springboot-gradle-apache
-  title: Java 웹 앱 (Apache + Spring Boot + Gradle)
-  description: Apache로 서비스되는 Java 웹 프로젝트를 생성하며, Spring Boot + Gradle 설정과 선택형 Ingress를 함께 구성합니다.
+  title: Java 웹 앱 (Apache + Spring Boot)
+  description: Apache로 서비스되는 Java 웹 프로젝트를 생성하며, Spring Boot 설정과 선택형 Ingress를 함께 구성합니다.
   tags:
     - java
     - spring-boot
+    - maven
     - gradle
     - apache
 spec:
@@ -59,6 +60,18 @@ spec:
           default: app
     - title: 버전 및 빌드 옵션
       properties:
+        buildTool:
+          type: string
+          title: Build Tool
+          description: 프로젝트 빌드 도구를 선택합니다.
+          default: maven
+          enum:
+            - maven
+            - gradle
+          enumNames:
+            - Maven
+            - Gradle
+          ui:widget: radio
         javaVersion:
           type: string
           title: Java Version
@@ -109,6 +122,23 @@ spec:
           title: Lombok 사용
           description: 선택하면 Lombok 의존성을 추가해 보일러플레이트 코드를 줄입니다.
           default: false
+      dependencies:
+        buildTool:
+          oneOf:
+            - properties:
+                buildTool:
+                  enum: [maven]
+                securityPipelineNote:
+                  type: string
+                  title: 보안 파이프라인 안내
+                  default: Maven 선택 시 DevSecOps CI/CD(SAST/SCA, Trivy 이미지 스캔, SBOM 생성, Cosign 서명/검증)가 기본 파이프라인으로 동작합니다.
+                  ui:widget: textarea
+                  ui:options:
+                    rows: 4
+                  readOnly: true
+            - properties:
+                buildTool:
+                  enum: [gradle]
     - title: 네트워크 옵션
       properties:
         servicePort:
@@ -194,6 +224,7 @@ spec:
         description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
         topics:
           - spring-boot
+          - maven
           - gradle
           - java
           - apache
@@ -210,6 +241,7 @@ spec:
           artifactId: ${{ parameters.artifactId }}
           javaVersion: ${{ parameters.javaVersion }}
           springBootVersion: ${{ parameters.springBootVersion }}
+          buildTool: ${{ parameters.buildTool }}
           gradleVersion: ${{ parameters.gradleVersion }}
           packaging: ${{ parameters.packaging }}
           useActuator: ${{ parameters.useActuator }}
@@ -219,6 +251,32 @@ spec:
           hostPrefix: ${{ parameters.hostPrefix }}
           baseDomain: ${{ parameters.baseDomain }}
           eksCluster: ${{ parameters.eksCluster }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          gitopsRepo: gitops
+
+    - id: template-maven-overlay
+      if: ${{ parameters.buildTool == 'maven' }}
+      name: Maven/DevSecOps 오버레이 적용
+      action: fetch:template
+      input:
+        url: ./skeleton-maven
+        values:
+          projectName: ${{ parameters.projectName }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+          javaVersion: ${{ parameters.javaVersion }}
+          springBootVersion: ${{ parameters.springBootVersion }}
+          buildTool: ${{ parameters.buildTool }}
+          packaging: ${{ parameters.packaging }}
+          useActuator: ${{ parameters.useActuator }}
+          useSpringWeb: ${{ parameters.useSpringWeb }}
+          useLombok: ${{ parameters.useLombok }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}

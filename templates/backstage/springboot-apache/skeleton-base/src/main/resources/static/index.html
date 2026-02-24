@@ -114,9 +114,15 @@
           <p class="value"><code>${{ values.springBootVersion }}</code></p>
         </article>
         <article class="item">
+          <p class="label">Build Tool</p>
+          <p class="value"><code>${{ values.buildTool }}</code></p>
+        </article>
+{% if values.buildTool == 'gradle' %}
+        <article class="item">
           <p class="label">Gradle Version</p>
           <p class="value"><code>${{ values.gradleVersion }}</code></p>
         </article>
+{% endif %}
         <article class="item">
           <p class="label">Packaging</p>
           <p class="value"><code>${{ values.packaging }}</code></p>

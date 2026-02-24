@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>${{ values.springBootVersion }}</version>
+    <relativePath />
+  </parent>
+
+  <groupId>${{ values.groupId }}</groupId>
+  <artifactId>${{ values.artifactId }}</artifactId>
+  <version>0.1.0</version>
+  <name>${{ values.projectName }}</name>
+  <description>Generated from Backstage Java template</description>
+{% if values.packaging == 'war' %}
+  <packaging>war</packaging>
+{% else %}
+  <packaging>jar</packaging>
+{% endif %}
+
+  <properties>
+    <java.version>${{ values.javaVersion }}</java.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+{% if values.useSpringWeb %}
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+{% endif %}
+{% if values.useActuator %}
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+{% endif %}
+{% if values.useLombok %}
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+{% endif %}
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <release>${{ values.javaVersion }}</release>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+

@@ -378,3 +378,46 @@ Ingress host 형식:
   - 미등록이면 자동 등록 시도
   - 이미 등록되어 있으면 skip
   - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
+
+---
+
+## 16. 최신 반영 사항 (2026-02-24)
+
+### 16.1 Java 템플릿 빌드도구 선택 추가 (Maven 기본)
+
+- 파일: `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - `buildTool` 라디오 선택 추가 (`maven` / `gradle`)
+  - 기본값을 `maven`으로 설정
+  - 템플릿 제목에서 `Gradle` 문구 제거
+  - `maven` 선택 시 보안 파이프라인 안내 문구 표시
+
+### 16.2 Gradle 경로 유지 + Maven 경로 오버레이 분기
+
+- `gradle` 선택:
+  - 기존 `skeleton-base`의 CI/CD 동작을 그대로 사용
+- `maven` 선택:
+  - `template-maven-overlay` step으로 `skeleton-maven` 오버레이 적용
+  - 오버레이 대상:
+    - `.github/workflows/ci.yaml` (`DevSecOps Pipeline`)
+    - `pom.xml`
+    - `Dockerfile`
+    - `README.md`
+
+### 16.3 Maven 선택 시 DevSecOps Pipeline 적용
+
+- 파일: `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/ci.yaml`
+- 주요 단계:
+  - Stage 1: SonarQube 기반 SAST/SCA (`mvn clean verify sonar:sonar`)
+  - Stage 2: Docker Build -> Trivy Scan -> SBOM -> Cosign Sign/Verify -> ECR Push
+- 보완:
+  - ECR 저장소 자동 생성 step 추가
+  - Maven 캐시(`actions/setup-java` cache) 적용
+  - 기존 CD 워크플로(`cd.yaml`)는 Gradle 경로와 동일하게 유지
+
+### 16.4 템플릿 산출물 메타 화면 보정
+
+- 파일: `templates/backstage/springboot-apache/skeleton-base/src/main/resources/static/index.html`
+- 변경:
+  - Build Tool 항목 추가
+  - `gradle` 선택 시에만 Gradle Version 표출
