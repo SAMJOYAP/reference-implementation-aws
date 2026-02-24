@@ -282,7 +282,6 @@ spec:
           eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -310,7 +309,6 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -337,7 +335,6 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -398,7 +395,7 @@ spec:
         entityRef: ${{ steps['register'].output.entityRef }}
       - title: GitHub에서 열기
         icon: github
-        url: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
+        url: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
       - title: GitHub Actions 보기
         icon: github
-        url: ${{ (steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl) + '/actions' }}
+        url: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}/actions

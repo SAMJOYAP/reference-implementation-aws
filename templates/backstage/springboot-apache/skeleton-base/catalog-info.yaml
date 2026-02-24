@@ -11,10 +11,10 @@ metadata:
     backstage.io/kubernetes-label-selector: 'entity-id=${{ values.projectName }}'
     backstage.io/kubernetes-namespace: ${{ values.projectName }}
   links:
-    - url: ${{ values.remoteUrl }}
+    - url: https://github.com/${{ values.owner }}/${{ values.repo }}
       title: 저장소
       icon: github
-    - url: ${{ values.remoteUrl }}/actions
+    - url: https://github.com/${{ values.owner }}/${{ values.repo }}/actions
       title: GitHub Actions
       icon: github
 spec:
