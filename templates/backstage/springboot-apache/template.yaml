@@ -213,7 +213,8 @@ spec:
         repoUrl: https://github.com/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/gitops
         path: apps/${{ parameters.projectName }}
 
-    - id: create-repo
+    - id: create-repo-gradle
+      if: ${{ parameters.buildTool == 'gradle' }}
       name: 저장소 생성
       action: github:repo:create
       input:
@@ -225,8 +226,25 @@ spec:
         description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
         topics:
           - spring-boot
-          - maven
           - gradle
+          - java
+          - apache
+          - backstage
+
+    - id: create-repo-maven
+      if: ${{ parameters.buildTool == 'maven' }}
+      name: 저장소 생성
+      action: github:repo:create
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        repoVisibility: ${{ parameters.repoVisibility }}
+        allowAutoMerge: true
+        allowSquashMerge: true
+        deleteBranchOnMerge: true
+        description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Maven)
+        topics:
+          - spring-boot
+          - maven
           - java
           - apache
           - backstage
@@ -254,7 +272,7 @@ spec:
           eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -264,6 +282,7 @@ spec:
       action: fetch:template
       input:
         url: ./skeleton-gradle
+        replace: true
         values:
           projectName: ${{ parameters.projectName }}
           groupId: ${{ parameters.groupId }}
@@ -281,7 +300,7 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -291,6 +310,7 @@ spec:
       action: fetch:template
       input:
         url: ./skeleton-maven
+        replace: true
         values:
           projectName: ${{ parameters.projectName }}
           groupId: ${{ parameters.groupId }}
@@ -307,7 +327,7 @@ spec:
           baseDomain: ${{ parameters.baseDomain }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
-          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          remoteUrl: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
@@ -368,7 +388,7 @@ spec:
         entityRef: ${{ steps['register'].output.entityRef }}
       - title: GitHub에서 열기
         icon: github
-        url: ${{ steps['create-repo'].output.remoteUrl }}
+        url: ${{ steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl }}
       - title: GitHub Actions 보기
         icon: github
-        url: ${{ steps['create-repo'].output.remoteUrl }}/actions
+        url: ${{ (steps['create-repo-maven'].output.remoteUrl || steps['create-repo-gradle'].output.remoteUrl) + '/actions' }}

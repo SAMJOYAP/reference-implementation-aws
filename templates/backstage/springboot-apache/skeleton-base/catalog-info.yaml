@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: ${{ values.projectName }}
-  description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + Gradle)
+  description: Backstage 템플릿으로 생성된 Java 웹 프로젝트 (Apache + Spring Boot + ${{ values.buildTool | upper }})
   annotations:
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
