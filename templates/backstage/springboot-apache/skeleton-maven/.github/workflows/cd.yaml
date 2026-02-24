@@ -46,8 +46,8 @@ jobs:
             echo "GitOps app path does not exist yet: apps/${APP_NAME} (bootstrap mode)"
           fi
 
-  publish-ecr:
-    name: Build and Push to ECR
+  deploy-gitops:
+    name: Deploy via GitOps
     if: github.event.workflow_run.conclusion == 'success'
     needs: preflight
     runs-on: ubuntu-latest
@@ -61,73 +61,27 @@ jobs:
       GITOPS_REPO: ${{ values.gitopsOwner }}/${{ values.gitopsRepo }}
       APP_NAME: ${{ values.projectName }}
       APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
+      IMAGE_TAG: {% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: {% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '${{ values.javaVersion }}'
-
-      - name: Build artifact
-        run: mvn -B -DskipTests package
-
-      - name: Resolve image version from git tag
-        id: version
-        shell: bash
-        run: |
-          if git tag --list | grep -q .; then
-            VERSION_TAG="$(git describe --tags --always --dirty=-dev)"
-            VERSION_TAG="${VERSION_TAG#v}"
-          else
-            VERSION_TAG="1.0.0"
-          fi
-          SHA_TAG="{% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}"
-          SHA_TAG="${SHA_TAG::7}"
-          echo "version_tag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
-          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Normalize runtime artifact
-        shell: bash
-        run: |
-          APP_FILE="$(find target -maxdepth 1 -type f \( -name '*.jar' -o -name '*.war' \) | head -n 1)"
-          if [ -z "$APP_FILE" ]; then
-            echo "No jar/war artifact found in target"
-            exit 1
-          fi
-          cp "$APP_FILE" target/app-runtime.jar
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN }}{% endraw %}
           aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
 
-      - name: Ensure ECR repository exists
+      - name: Resolve image URI from security pipeline output tag
         shell: bash
         run: |
-          aws ecr describe-repositories --repository-names "$ECR_REPOSITORY" >/dev/null 2>&1 || \
-          aws ecr create-repository --repository-name "$ECR_REPOSITORY" >/dev/null
+          set -euo pipefail
+          ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+          REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+          aws ecr describe-images \
+            --repository-name "${ECR_REPOSITORY}" \
+            --image-ids imageTag="${IMAGE_TAG}" >/dev/null
 
-      - name: Build and push image
-        env:
-          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
-          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
-          SHA_TAG: {% raw %}${{ steps.version.outputs.sha_tag }}{% endraw %}
-        run: |
-          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY"
-          docker build -t "$IMAGE_URI:$VERSION_TAG" -t "$IMAGE_URI:$SHA_TAG" .
-          docker push "$IMAGE_URI:$VERSION_TAG"
-          docker push "$IMAGE_URI:$SHA_TAG"
+          echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
 
       - name: Checkout GitOps repo
         uses: actions/checkout@v4
@@ -229,7 +183,6 @@ jobs:
           YAML
           fi
 
-          # Keep Spring Boot traffic wiring consistent for both new and existing apps.
           sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
           sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
 
@@ -263,14 +216,10 @@ jobs:
           fi
 
       - name: Update GitOps deployment image tag
-        env:
-          REGISTRY: {% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}
-          VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
         shell: bash
         run: |
-          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
           DEPLOYMENT_FILE="gitops-repo/apps/$APP_NAME/manifests/deployment.yaml"
-          sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" "$DEPLOYMENT_FILE"
+          sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\\1$IMAGE_URI|" "$DEPLOYMENT_FILE"
 
       - name: Check GitOps manifest changes
         id: manifest_changes
