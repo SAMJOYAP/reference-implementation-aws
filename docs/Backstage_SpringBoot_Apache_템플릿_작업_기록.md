@@ -420,6 +420,16 @@ Ingress host 형식:
   - cert-manager 재검증 후 `Certificate Ready=True`, `Order valid` 전환
 - 결과:
   - HTTPS 응답 `HTTP/2 200` 확인
+
+### 16.5 Trivy 차단 정책 최종 원복
+
+- 요청사항 반영:
+  - Trivy 정책을 원래 기준으로 복구
+- 현재 기준:
+  - `severity: CRITICAL,HIGH`
+  - `exit-code: 1`
+- 의미:
+  - HIGH 또는 CRITICAL 취약점 발견 시 보안 파이프라인 실패 처리
   - 이미 등록되어 있으면 skip
   - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
 
