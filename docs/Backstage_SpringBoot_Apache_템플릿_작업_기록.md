@@ -378,6 +378,34 @@ Ingress host 형식:
 - 허브 외 클러스터 선택 시
   - Argo CD 등록 여부 확인
   - 미등록이면 자동 등록 시도
+
+---
+
+## 16. 최신 반영 사항 (2026-02-24)
+
+### 16.1 Maven Security 파이프라인 시크릿명 분리
+
+- 파일: `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/security.yaml`
+- 변경:
+  - AWS assume role secret을 `AWS_ROLE_ARN`에서 `AWS_ROLE_ARN_SEC_OPS`로 변경
+- 목적:
+  - 보안 파이프라인 역할을 운영/CD 역할과 분리
+
+### 16.2 Cosign verify 게이트 정책
+
+- 일시 완화했던 verify 우회 로직을 제거하고 strict 검증으로 원복
+- 현재 정책:
+  - `cosign verify` 실패 시 파이프라인 실패
+  - 우회 없이 IAM/ECR read 권한을 정상 부여하는 방향으로 운영
+
+### 16.3 Trivy 정책 운영값
+
+- 보고용 스캔:
+  - `CRITICAL,HIGH`, `exit-code: 0`
+- 게이트 스캔:
+  - `CRITICAL`만 차단, `exit-code: 1`
+- 결과:
+  - HIGH는 리포트로 관리하고, CRITICAL만 배포 차단
   - 이미 등록되어 있으면 skip
   - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
 
