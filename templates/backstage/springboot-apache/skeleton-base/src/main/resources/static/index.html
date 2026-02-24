@@ -122,6 +122,11 @@
           <p class="label">Gradle Version</p>
           <p class="value"><code>${{ values.gradleVersion }}</code></p>
         </article>
+{% else %}
+        <article class="item">
+          <p class="label">Maven Build</p>
+          <p class="value"><code>pom.xml</code></p>
+        </article>
 {% endif %}
         <article class="item">
           <p class="label">Packaging</p>

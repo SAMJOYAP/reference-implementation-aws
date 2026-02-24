@@ -258,6 +258,33 @@ spec:
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
 
+    - id: template-gradle-overlay
+      if: ${{ parameters.buildTool == 'gradle' }}
+      name: Gradle 오버레이 적용
+      action: fetch:template
+      input:
+        url: ./skeleton-gradle
+        values:
+          projectName: ${{ parameters.projectName }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+          javaVersion: ${{ parameters.javaVersion }}
+          springBootVersion: ${{ parameters.springBootVersion }}
+          buildTool: ${{ parameters.buildTool }}
+          gradleVersion: ${{ parameters.gradleVersion }}
+          packaging: ${{ parameters.packaging }}
+          useActuator: ${{ parameters.useActuator }}
+          useSpringWeb: ${{ parameters.useSpringWeb }}
+          useLombok: ${{ parameters.useLombok }}
+          servicePort: ${{ parameters.servicePort }}
+          hostPrefix: ${{ parameters.hostPrefix }}
+          baseDomain: ${{ parameters.baseDomain }}
+          owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
+          remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
+          gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
+          gitopsRepo: gitops
+
     - id: template-maven-overlay
       if: ${{ parameters.buildTool == 'maven' }}
       name: Maven/DevSecOps 오버레이 적용
