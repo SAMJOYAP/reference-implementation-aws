@@ -443,3 +443,37 @@ Ingress host 형식:
 - 목적:
   - 중복 빌드/중복 push 제거
   - 보안 검증 통과 이미지 기준으로만 배포 반영
+
+### 16.7 Maven 생성 시 Gradle 산출물 혼입 방지 (2026-02-24 추가 반영)
+
+- 파일:
+  - `templates/backstage/springboot-apache/skeleton-gradle/build.gradle`
+  - `templates/backstage/springboot-apache/skeleton-gradle/settings.gradle`
+  - `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - Gradle 빌드 파일(`build.gradle`, `settings.gradle`)을 base에서 분리해 `skeleton-gradle`로 이동
+  - `buildTool=gradle`일 때만 Gradle 오버레이를 적용
+  - `buildTool=maven`이면 Gradle 파일이 생성 repo에 포함되지 않도록 고정
+
+### 16.8 Maven 패키징 정책/메타데이터 정합화 (2026-02-24 추가 반영)
+
+- 파일: `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - `buildTool=maven`일 때 `packaging`은 `jar`만 허용
+  - 저장소 생성 description/topics를 buildTool 기준으로 분기
+    - Maven 선택 시 `+ Maven`, `maven` topic
+    - Gradle 선택 시 `+ Gradle`, `gradle` topic
+
+### 16.9 Catalog 등록 InputError 수정 (2026-02-24 추가 반영)
+
+- 증상:
+  - `links.0.url` 검증 실패
+  - 값에 `${{ steps[...] || steps[...] }}` 표현식 문자열이 남아 URL 파싱 실패
+- 원인:
+  - Backstage 템플릿 값 치환에서 해당 OR 표현식이 안전하게 해석되지 않음
+- 조치 파일:
+  - `templates/backstage/springboot-apache/template.yaml`
+  - `templates/backstage/springboot-apache/skeleton-base/catalog-info.yaml`
+- 변경:
+  - `remoteUrl` 합성 표현식 제거
+  - 링크 URL은 `https://github.com/${owner}/${repo}` 형태로 직접 구성
