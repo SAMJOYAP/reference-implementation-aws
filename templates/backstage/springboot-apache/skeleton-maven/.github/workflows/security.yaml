@@ -81,7 +81,9 @@ jobs:
             echo "No jar/war artifact found in target"
             exit 1
           fi
+          mkdir -p build/libs
           cp "$APP_FILE" target/app-runtime.jar
+          cp "$APP_FILE" build/libs/app-runtime.jar
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -158,4 +160,3 @@ jobs:
             --certificate-identity-regexp="https://github.com/{% raw %}${{ github.repository }}{% endraw %}" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
             "$IMAGE_URI"
-
