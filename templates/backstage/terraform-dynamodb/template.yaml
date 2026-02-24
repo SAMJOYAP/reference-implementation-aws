@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#7C3AED"
     sesac.io/template-stack: DynamoDB
   name: terraform-dynamodb
-  title: Create DynamoDB Table with Terraform
-  description: Creates a DynamoDB table with optional GSI, TTL, PITR, Streams, Auto Scaling, and KMS encryption
+  title: Terraform으로 DynamoDB 테이블 생성
+  description: GSI, TTL, PITR, 스트림, Auto Scaling, KMS 암호화 옵션을 포함한 DynamoDB 테이블을 생성합니다
   tags:
     - terraform
     - aws
@@ -18,18 +18,18 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the DynamoDB table (lowercase, hyphens only)
+          description: DynamoDB 테이블 이름 (소문자, 하이픈만 사용)
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -38,100 +38,100 @@ spec:
             allowedOwners:
               - SAMJOYAP
 
-    - title: Table Schema
+    - title: 테이블 스키마
       required:
         - hashKey
       properties:
         hashKey:
           type: string
-          title: Partition Key (Hash Key)
-          description: Primary partition key attribute name
+          title: 파티션 키 (해시 키)
+          description: 기본 파티션 키 속성 이름
           default: id
         hashKeyType:
           type: string
-          title: Partition Key Type
+          title: 파티션 키 유형
           default: S
           enum:
             - S
             - N
             - B
           enumNames:
-            - 'String (S)'
-            - 'Number (N)'
-            - 'Binary (B)'
+            - '문자열 (S)'
+            - '숫자 (N)'
+            - '바이너리 (B)'
         rangeKey:
           type: string
-          title: Sort Key (Range Key)
-          description: Optional sort key attribute name (leave blank to omit)
+          title: 정렬 키 (범위 키)
+          description: 선택적 정렬 키 속성 이름 (생략하려면 비워두세요)
           default: ''
         rangeKeyType:
           type: string
-          title: Sort Key Type
+          title: 정렬 키 유형
           default: S
           enum:
             - S
             - N
             - B
           enumNames:
-            - 'String (S)'
-            - 'Number (N)'
-            - 'Binary (B)'
+            - '문자열 (S)'
+            - '숫자 (N)'
+            - '바이너리 (B)'
 
-    - title: Table Configuration
+    - title: 테이블 설정
       properties:
         billingMode:
           type: string
-          title: Billing Mode
+          title: 과금 방식
           default: PAY_PER_REQUEST
           enum:
             - PAY_PER_REQUEST
             - PROVISIONED
           enumNames:
-            - 'On-Demand (PAY_PER_REQUEST)'
-            - 'Provisioned'
+            - '온디맨드 (PAY_PER_REQUEST)'
+            - '프로비저닝'
         readCapacity:
           type: integer
-          title: Read Capacity Units (Provisioned only)
+          title: 읽기 용량 단위 (프로비저닝 전용)
           default: 5
-          description: Required only when billing mode is PROVISIONED
+          description: 과금 방식이 PROVISIONED일 때만 필요합니다
         writeCapacity:
           type: integer
-          title: Write Capacity Units (Provisioned only)
+          title: 쓰기 용량 단위 (프로비저닝 전용)
           default: 5
-          description: Required only when billing mode is PROVISIONED
+          description: 과금 방식이 PROVISIONED일 때만 필요합니다
         tableClass:
           type: string
-          title: Table Class
+          title: 테이블 클래스
           default: STANDARD
           enum:
             - STANDARD
             - STANDARD_INFREQUENT_ACCESS
           enumNames:
-            - 'Standard'
-            - 'Standard Infrequent Access (lower storage cost)'
+            - '표준'
+            - '표준 Infrequent Access (낮은 스토리지 비용)'
         ttlEnabled:
           type: boolean
-          title: Enable TTL (Time to Live)
+          title: TTL (Time to Live) 활성화
           default: false
-          description: Automatically delete expired items
+          description: 만료된 항목을 자동으로 삭제합니다
         ttlAttribute:
           type: string
-          title: TTL Attribute Name
+          title: TTL 속성 이름
           default: expires_at
-          description: Attribute name used for TTL (must be a Number type in epoch seconds)
+          description: TTL에 사용할 속성 이름 (epoch 초 단위의 Number 유형이어야 합니다)
         pitrEnabled:
           type: boolean
-          title: Enable Point-in-Time Recovery (PITR)
+          title: 특정 시점 복구 (PITR) 활성화
           default: true
-          description: Allows restoring the table to any point in the last 35 days
+          description: 최근 35일 이내의 임의 시점으로 테이블을 복원할 수 있습니다
         streamEnabled:
           type: boolean
-          title: Enable DynamoDB Streams
+          title: DynamoDB 스트림 활성화
           default: false
-          description: Capture item-level changes for event-driven processing
+          description: 이벤트 기반 처리를 위해 항목 수준 변경 내용을 캡처합니다
         streamViewType:
           type: string
-          title: Stream View Type
+          title: 스트림 뷰 유형
           default: NEW_AND_OLD_IMAGES
           enum:
             - NEW_IMAGE
@@ -139,48 +139,48 @@ spec:
             - NEW_AND_OLD_IMAGES
             - KEYS_ONLY
           enumNames:
-            - 'New image only'
-            - 'Old image only'
-            - 'New and old images'
-            - 'Keys only'
+            - '새 이미지만'
+            - '이전 이미지만'
+            - '새 이미지 및 이전 이미지'
+            - '키만'
         kmsEncryption:
           type: boolean
-          title: AWS Managed KMS Encryption
+          title: AWS 관리형 KMS 암호화
           default: false
-          description: Use AWS managed KMS key (SSE_KMS). Default is AES-256 (AWS owned key).
+          description: AWS 관리형 KMS 키 사용 (SSE_KMS). 기본값은 AES-256 (AWS 소유 키)입니다.
         gsiEnabled:
           type: boolean
-          title: Add Global Secondary Index (GSI)
+          title: 글로벌 보조 인덱스 (GSI) 추가
           default: false
-          description: Adds one GSI for flexible query patterns
+          description: 유연한 쿼리 패턴을 위한 GSI를 하나 추가합니다
         gsiName:
           type: string
-          title: GSI Name
+          title: GSI 이름
           default: gsi-by-type
         gsiHashKey:
           type: string
-          title: GSI Partition Key
+          title: GSI 파티션 키
           default: type
         gsiHashKeyType:
           type: string
-          title: GSI Partition Key Type
+          title: GSI 파티션 키 유형
           default: S
           enum:
             - S
             - N
             - B
           enumNames:
-            - 'String (S)'
-            - 'Number (N)'
-            - 'Binary (B)'
+            - '문자열 (S)'
+            - '숫자 (N)'
+            - '바이너리 (B)'
         autoScaling:
           type: boolean
-          title: Enable Auto Scaling (Provisioned only)
+          title: Auto Scaling 활성화 (프로비저닝 전용)
           default: false
-          description: Automatically adjusts read/write capacity. Only applies to PROVISIONED billing mode.
+          description: 읽기/쓰기 용량을 자동으로 조정합니다. PROVISIONED 과금 방식에만 적용됩니다.
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -188,14 +188,14 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -207,7 +207,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -239,20 +239,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -260,12 +260,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

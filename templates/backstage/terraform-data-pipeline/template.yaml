@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#0D9488"
     sesac.io/template-stack: Data Pipeline
   name: terraform-data-pipeline
-  title: Create Data Pipeline (Glue/EMR) with Terraform
-  description: Creates an AWS data pipeline with S3 Data Lake, Glue Catalog/Crawler/Job, optional EMR Spark cluster, KMS encryption, and CloudWatch logging
+  title: Terraform으로 데이터 파이프라인 (Glue/EMR) 생성
+  description: S3 Data Lake, Glue Catalog/Crawler/Job, 선택적 EMR Spark 클러스터, KMS 암호화, CloudWatch 로깅을 포함한 AWS 데이터 파이프라인을 생성합니다
   tags:
     - terraform
     - aws
@@ -19,18 +19,18 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the data pipeline (lowercase, hyphens only)
+          description: 데이터 파이프라인 이름 (소문자, 하이픈만 사용)
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -39,49 +39,49 @@ spec:
             allowedOwners:
               - SAMJOYAP
 
-    - title: Pipeline Type
+    - title: 파이프라인 유형
       properties:
         pipelineType:
           type: string
-          title: Pipeline Type
+          title: 파이프라인 유형
           default: glue
           enum:
             - glue
             - emr
             - both
           enumNames:
-            - 'Glue only (S3 Data Lake + Glue Catalog + Crawler + Job)'
-            - 'EMR only (S3 Data Lake + EMR Spark cluster)'
-            - 'Both Glue and EMR'
+            - 'Glue만 (S3 Data Lake + Glue Catalog + Crawler + Job)'
+            - 'EMR만 (S3 Data Lake + EMR Spark 클러스터)'
+            - 'Glue와 EMR 모두'
 
     - title: S3 Data Lake
       properties:
         s3BucketSuffix:
           type: string
-          title: S3 Bucket Name Suffix
-          description: Bucket will be named "{name}-datalake-{suffix}". Use your AWS account ID or a unique string.
+          title: S3 버킷 이름 접미사
+          description: 버킷 이름은 "{name}-datalake-{suffix}"로 지정됩니다. AWS 계정 ID 또는 고유한 문자열을 사용하세요.
           default: datalake
         s3Prefix:
           type: string
-          title: S3 Key Prefix for Raw Data
+          title: 원시 데이터 S3 키 접두사
           default: raw/
-          description: S3 prefix where raw input data is stored (used by Crawler)
+          description: 원시 입력 데이터가 저장되는 S3 접두사 (Crawler에서 사용)
 
-    - title: Glue Configuration
+    - title: Glue 설정
       properties:
         glueJobType:
           type: string
-          title: Glue Job Type
+          title: Glue 작업 유형
           default: glueetl
           enum:
             - glueetl
             - pythonshell
           enumNames:
-            - 'Glue ETL (Apache Spark, 2 DPU minimum)'
-            - 'Python Shell (0.0625 DPU, for lightweight scripts)'
+            - 'Glue ETL (Apache Spark, 최소 2 DPU)'
+            - 'Python Shell (0.0625 DPU, 경량 스크립트용)'
         glueWorkerType:
           type: string
-          title: Glue Worker Type (ETL only)
+          title: Glue 워커 유형 (ETL 전용)
           default: G.1X
           enum:
             - G.025X
@@ -93,24 +93,24 @@ spec:
             - 'G.2X (2 DPU, 8 vCPU, 32 GB)'
         glueWorkerCount:
           type: integer
-          title: Number of Glue Workers
+          title: Glue 워커 수
           default: 2
           enum: [2, 5, 10]
           enumNames:
-            - '2 workers'
-            - '5 workers'
-            - '10 workers'
+            - '2개 워커'
+            - '5개 워커'
+            - '10개 워커'
         crawlerSchedule:
           type: string
-          title: Crawler Schedule (cron)
+          title: Crawler 스케줄 (cron)
           default: 'cron(0 1 * * ? *)'
-          description: 'Cron expression for automatic crawling. Use "disabled" to trigger manually only.'
+          description: '자동 크롤링을 위한 cron 표현식. 수동으로만 실행하려면 "disabled"를 사용하세요.'
 
-    - title: EMR Configuration
+    - title: EMR 설정
       properties:
         emrReleaseLabel:
           type: string
-          title: EMR Release Label
+          title: EMR 릴리스 레이블
           default: emr-7.0.0
           enum:
             - emr-7.0.0
@@ -122,7 +122,7 @@ spec:
             - 'EMR 6.14.0 (Spark 3.4, Hadoop 3.3)'
         emrMasterInstanceType:
           type: string
-          title: EMR Master Instance Type
+          title: EMR 마스터 인스턴스 유형
           default: m5.xlarge
           enum:
             - m5.xlarge
@@ -134,7 +134,7 @@ spec:
             - 'r5.xlarge (4 vCPU, 32 GB)'
         emrCoreInstanceType:
           type: string
-          title: EMR Core Instance Type
+          title: EMR 코어 인스턴스 유형
           default: m5.xlarge
           enum:
             - m5.xlarge
@@ -146,29 +146,29 @@ spec:
             - 'r5.xlarge (4 vCPU, 32 GB)'
         emrCoreCount:
           type: integer
-          title: EMR Core Node Count
+          title: EMR 코어 노드 수
           default: 2
           enum: [2, 4, 8]
           enumNames:
-            - '2 core nodes'
-            - '4 core nodes'
-            - '8 core nodes'
+            - '2개 코어 노드'
+            - '4개 코어 노드'
+            - '8개 코어 노드'
 
-    - title: Security & Logging
+    - title: 보안 및 로깅
       properties:
         kmsEncryption:
           type: boolean
-          title: Enable KMS Encryption
+          title: KMS 암호화 활성화
           default: false
-          description: Encrypt S3 data, Glue job bookmarks, and EMR EBS volumes with AWS managed KMS key
+          description: AWS 관리형 KMS 키로 S3 데이터, Glue 작업 북마크, EMR EBS 볼륨을 암호화합니다
         cloudwatchLogs:
           type: boolean
-          title: Export Logs to CloudWatch
+          title: CloudWatch로 로그 내보내기
           default: true
-          description: Send Glue job and EMR application logs to CloudWatch Logs
+          description: Glue 작업 및 EMR 애플리케이션 로그를 CloudWatch Logs로 전송합니다
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -176,14 +176,14 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -197,7 +197,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -223,20 +223,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -244,12 +244,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

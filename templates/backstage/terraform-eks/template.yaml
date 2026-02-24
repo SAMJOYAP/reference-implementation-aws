@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#0EA5E9"
     sesac.io/template-stack: EKS
   name: terraform-eks
-  title: Create EKS Cluster with Terraform
-  description: Creates an EKS cluster with VPC (public/private subnets, NAT GW), managed node group, core addons (EBS CSI, VPC CNI, CoreDNS, kube-proxy), and IRSA roles for AWS Load Balancer Controller and Fluent Bit
+  title: Terraform으로 EKS 클러스터 생성
+  description: VPC (퍼블릭/프라이빗 서브넷, NAT GW), 관리형 노드 그룹, 핵심 애드온 (EBS CSI, VPC CNI, CoreDNS, kube-proxy), AWS Load Balancer Controller 및 Fluent Bit용 IRSA 역할을 포함한 EKS 클러스터를 생성합니다
   tags:
     - terraform
     - aws
@@ -18,17 +18,17 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: EKS cluster name
+          description: EKS 클러스터 이름
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -37,11 +37,11 @@ spec:
             allowedOwners:
               - SAMJOYAP
 
-    - title: Cluster Configuration
+    - title: 클러스터 설정
       properties:
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -49,39 +49,39 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
         clusterVersion:
           type: string
-          title: Kubernetes Version
+          title: Kubernetes 버전
           default: '1.34'
           enum:
             - '1.34'
             - '1.33'
             - '1.32'
           enumNames:
-            - 'Kubernetes 1.34 (Latest)'
+            - 'Kubernetes 1.34 (최신)'
             - 'Kubernetes 1.33'
             - 'Kubernetes 1.32'
         environment:
           type: string
-          title: Environment
+          title: 환경
           default: dev
           enum:
             - dev
             - staging
             - prod
           enumNames:
-            - 'Development'
-            - 'Staging'
-            - 'Production'
+            - '개발'
+            - '스테이징'
+            - '프로덕션'
         vpcCidr:
           type: string
-          title: VPC CIDR Block
+          title: VPC CIDR 블록
           default: '10.0.0.0/16'
-          description: CIDR block for the VPC (must be a valid network address). 3 public and 3 private subnets will be created across AZs.
+          description: VPC의 CIDR 블록 (유효한 네트워크 주소여야 합니다). 가용 영역에 걸쳐 퍼블릭 3개, 프라이빗 3개의 서브넷이 생성됩니다.
           enum:
             - '10.0.0.0/16'
             - '10.1.0.0/16'
@@ -97,11 +97,11 @@ spec:
             - '172.16.0.0/16'
             - '192.168.0.0/16'
 
-    - title: Node Group Configuration
+    - title: 노드 그룹 설정
       properties:
         nodeInstanceType:
           type: string
-          title: Node Instance Type
+          title: 노드 인스턴스 유형
           default: m5.large
           enum:
             - t3.medium
@@ -112,49 +112,49 @@ spec:
             - c5.large
             - c5.xlarge
           enumNames:
-            - 't3.medium (2 vCPU, 4 GB) - Dev/Test'
+            - 't3.medium (2 vCPU, 4 GB) - 개발/테스트'
             - 't3.large (2 vCPU, 8 GB)'
-            - 'm5.large (2 vCPU, 8 GB) - Recommended'
+            - 'm5.large (2 vCPU, 8 GB) - 권장'
             - 'm5.xlarge (4 vCPU, 16 GB)'
             - 'm5.2xlarge (8 vCPU, 32 GB)'
-            - 'c5.large (2 vCPU, 4 GB) - Compute Optimized'
-            - 'c5.xlarge (4 vCPU, 8 GB) - Compute Optimized'
+            - 'c5.large (2 vCPU, 4 GB) - 컴퓨팅 최적화'
+            - 'c5.xlarge (4 vCPU, 8 GB) - 컴퓨팅 최적화'
         nodeDesiredSize:
           type: integer
-          title: Desired Node Count
+          title: 원하는 노드 수
           default: 3
           enum: [2, 3, 4, 5, 6]
           enumNames:
-            - '2 nodes'
-            - '3 nodes'
-            - '4 nodes'
-            - '5 nodes'
-            - '6 nodes'
+            - '2개 노드'
+            - '3개 노드'
+            - '4개 노드'
+            - '5개 노드'
+            - '6개 노드'
         nodeMinSize:
           type: integer
-          title: Minimum Node Count
+          title: 최소 노드 수
           default: 2
           enum: [1, 2, 3]
           enumNames:
-            - '1 node'
-            - '2 nodes'
-            - '3 nodes'
+            - '1개 노드'
+            - '2개 노드'
+            - '3개 노드'
         nodeMaxSize:
           type: integer
-          title: Maximum Node Count
+          title: 최대 노드 수
           default: 5
           enum: [3, 4, 5, 6, 8, 10]
           enumNames:
-            - '3 nodes'
-            - '4 nodes'
-            - '5 nodes'
-            - '6 nodes'
-            - '8 nodes'
-            - '10 nodes'
+            - '3개 노드'
+            - '4개 노드'
+            - '5개 노드'
+            - '6개 노드'
+            - '8개 노드'
+            - '10개 노드'
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -168,7 +168,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -188,20 +188,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -209,12 +209,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

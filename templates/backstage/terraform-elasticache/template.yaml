@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#DC2626"
     sesac.io/template-stack: ElastiCache
   name: terraform-elasticache
-  title: Create ElastiCache Redis with Terraform
-  description: Creates an ElastiCache Redis cluster with optional Cluster Mode, Multi-AZ, TLS/AUTH, snapshots, and CloudWatch alarms
+  title: Terraform으로 ElastiCache Redis 생성
+  description: 클러스터 모드, Multi-AZ, TLS/AUTH, 스냅샷, CloudWatch 알람 옵션을 포함한 ElastiCache Redis 클러스터를 생성합니다
   tags:
     - terraform
     - aws
@@ -19,18 +19,18 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the ElastiCache cluster (lowercase, hyphens only)
+          description: ElastiCache 클러스터 이름 (소문자, 하이픈만 사용)
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -39,21 +39,21 @@ spec:
             allowedOwners:
               - SAMJOYAP
 
-    - title: Redis Configuration
+    - title: Redis 설정
       properties:
         clusterMode:
           type: string
-          title: Cluster Mode
+          title: 클러스터 모드
           default: disabled
           enum:
             - disabled
             - enabled
           enumNames:
-            - 'Cluster Mode Disabled (single shard, up to 5 replicas)'
-            - 'Cluster Mode Enabled (multiple shards, horizontal scaling)'
+            - '클러스터 모드 비활성화 (단일 샤드, 최대 5개 복제본)'
+            - '클러스터 모드 활성화 (다중 샤드, 수평 확장)'
         engineVersion:
           type: string
-          title: Redis Engine Version
+          title: Redis 엔진 버전
           default: '7.0'
           enum:
             - '7.1'
@@ -65,7 +65,7 @@ spec:
             - 'Redis 6.2'
         nodeType:
           type: string
-          title: Node Type
+          title: 노드 유형
           default: cache.t3.micro
           enum:
             - cache.t3.micro
@@ -74,85 +74,85 @@ spec:
             - cache.r7g.large
             - cache.r7g.xlarge
           enumNames:
-            - 'cache.t3.micro (2 vCPU, 0.5 GB) - Dev/Test'
+            - 'cache.t3.micro (2 vCPU, 0.5 GB) - 개발/테스트'
             - 'cache.t3.small (2 vCPU, 1.37 GB)'
             - 'cache.t3.medium (2 vCPU, 3.09 GB)'
-            - 'cache.r7g.large (2 vCPU, 13.07 GB) - Production'
-            - 'cache.r7g.xlarge (4 vCPU, 26.32 GB) - Production'
+            - 'cache.r7g.large (2 vCPU, 13.07 GB) - 프로덕션'
+            - 'cache.r7g.xlarge (4 vCPU, 26.32 GB) - 프로덕션'
         numCacheClusters:
           type: integer
-          title: Number of Cache Nodes (Cluster Mode Disabled)
+          title: 캐시 노드 수 (클러스터 모드 비활성화)
           default: 1
           enum: [1, 2, 3]
           enumNames:
-            - '1 node (no replication)'
-            - '2 nodes (1 primary + 1 replica)'
-            - '3 nodes (1 primary + 2 replicas)'
+            - '1개 노드 (복제 없음)'
+            - '2개 노드 (프라이머리 1개 + 복제본 1개)'
+            - '3개 노드 (프라이머리 1개 + 복제본 2개)'
         numShards:
           type: integer
-          title: Number of Shards (Cluster Mode Enabled)
+          title: 샤드 수 (클러스터 모드 활성화)
           default: 2
           enum: [2, 3, 4, 6]
           enumNames:
-            - '2 shards'
-            - '3 shards'
-            - '4 shards'
-            - '6 shards'
+            - '2개 샤드'
+            - '3개 샤드'
+            - '4개 샤드'
+            - '6개 샤드'
         replicasPerShard:
           type: integer
-          title: Replicas Per Shard (Cluster Mode Enabled)
+          title: 샤드당 복제본 수 (클러스터 모드 활성화)
           default: 1
           enum: [1, 2]
           enumNames:
-            - '1 replica per shard'
-            - '2 replicas per shard'
+            - '샤드당 1개 복제본'
+            - '샤드당 2개 복제본'
         autoFailover:
           type: boolean
-          title: Enable Automatic Failover
+          title: 자동 장애 조치 활성화
           default: false
-          description: Requires at least 1 replica. Automatically promotes a replica on primary failure.
+          description: 복제본이 최소 1개 필요합니다. 프라이머리 장애 발생 시 복제본을 자동으로 승격합니다.
         multiAz:
           type: boolean
-          title: Enable Multi-AZ
+          title: Multi-AZ 활성화
           default: false
-          description: Distributes replicas across multiple Availability Zones (requires auto failover).
+          description: 여러 가용 영역에 걸쳐 복제본을 분산합니다 (자동 장애 조치 필요).
         transitEncryption:
           type: boolean
-          title: Enable TLS (in-transit encryption)
+          title: TLS 활성화 (전송 중 암호화)
           default: true
-          description: Encrypts data in transit between client and Redis
+          description: 클라이언트와 Redis 간의 전송 데이터를 암호화합니다
         atRestEncryption:
           type: boolean
-          title: Enable Encryption at Rest
+          title: 저장 데이터 암호화 활성화
           default: true
         authEnabled:
           type: boolean
-          title: Enable AUTH Token
+          title: AUTH 토큰 활성화
           default: false
-          description: Requires clients to authenticate with a password (requires TLS)
+          description: 클라이언트가 비밀번호로 인증하도록 요구합니다 (TLS 필요)
         snapshotRetentionDays:
           type: integer
-          title: Snapshot Retention (days)
+          title: 스냅샷 보존 기간 (일)
           default: 1
           enum: [0, 1, 7, 14]
           enumNames:
-            - 'Disabled'
-            - '1 day'
-            - '7 days'
-            - '14 days'
+            - '비활성화'
+            - '1일'
+            - '7일'
+            - '14일'
         cloudwatchAlarms:
           type: boolean
-          title: Enable CloudWatch Alarms
+          title: CloudWatch 알람 활성화
           default: false
-          description: Creates CPU and memory alarms (requires an existing SNS topic ARN in GitHub secrets)
+          description: CPU 및 메모리 알람을 생성합니다 (GitHub 시크릿에 기존 SNS 토픽 ARN 필요)
         vpcNameFilter:
           type: string
-          title: VPC Name Tag
+          title: VPC Name 태그
           default: 'eksctl-sesac-ref-impl-cluster/VPC'
-          description: 'Name tag of the VPC where ElastiCache will be deployed. Must contain private subnets spanning at least 2 AZs.'
+          description: 'ElastiCache를 배포할 VPC의 Name 태그. 최소 2개의 가용 영역에 걸친 프라이빗 서브넷이 있어야 합니다.'
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -160,14 +160,14 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -180,7 +180,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -207,20 +207,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -228,12 +228,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

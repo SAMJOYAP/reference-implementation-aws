@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#F59E0B"
     sesac.io/template-stack: EC2
   name: terraform-ec2
-  title: Create EC2 Instance with Terraform
-  description: Creates an EC2 instance using Terraform and GitHub Actions
+  title: Terraform으로 EC2 인스턴스 생성
+  description: Terraform과 GitHub Actions를 사용하여 EC2 인스턴스를 생성합니다
   tags:
     - terraform
     - aws
@@ -18,19 +18,19 @@ spec:
   type: infrastructure
 
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the EC2 instance
+          description: EC2 인스턴스 이름
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
-          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account. GitHub Apps only work with Organizations.'
+          description: '중요: 개인 계정이 아닌 GitHub 조직 이름을 사용하세요 (예: SAMJOYAP). GitHub Apps는 조직에서만 동작합니다.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -38,25 +38,25 @@ spec:
             allowedOwners:
               - SAMJOYAP  # Update this to your GitHub Organization name after forking
 
-    - title: EC2 Configuration
+    - title: EC2 설정
       properties:
         instanceType:
           type: string
-          title: Instance Type
-          description: EC2 instance type
+          title: 인스턴스 유형
+          description: EC2 인스턴스 유형
           default: t3.micro
           enum:
             - t3.micro
             - t3.small
             - t3.medium
           enumNames:
-            - 't3.micro (2 vCPU, 1 GB RAM) - Free Tier'
+            - 't3.micro (2 vCPU, 1 GB RAM) - 프리 티어'
             - 't3.small (2 vCPU, 2 GB RAM)'
             - 't3.medium (2 vCPU, 4 GB RAM)'
         region:
           type: string
-          title: AWS Region
-          description: AWS region for deployment
+          title: AWS 리전
+          description: 배포할 AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -64,18 +64,18 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
         vpcName:
           type: string
-          title: VPC Name
-          description: 'Name tag of the VPC to deploy into (e.g. eksctl-sesac-ref-impl-cluster/VPC). Check AWS Console → VPC → Your VPCs → Name column.'
+          title: VPC 이름
+          description: '배포할 VPC의 Name 태그 (예: eksctl-sesac-ref-impl-cluster/VPC). AWS 콘솔 → VPC → 내 VPC → Name 열에서 확인하세요.'
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -88,7 +88,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -103,20 +103,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -124,12 +124,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

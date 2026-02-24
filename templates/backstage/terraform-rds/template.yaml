@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#2563EB"
     sesac.io/template-stack: RDS
   name: terraform-rds
-  title: Create RDS Database with Terraform
-  description: Creates an RDS instance (PostgreSQL/MySQL/Aurora) with Multi-AZ, Performance Insights, CloudWatch Logs, and Secrets Manager integration
+  title: Terraform으로 RDS 데이터베이스 생성
+  description: Multi-AZ, Performance Insights, CloudWatch Logs, Secrets Manager 연동을 포함한 RDS 인스턴스 (PostgreSQL/MySQL/Aurora)를 생성합니다
   tags:
     - terraform
     - aws
@@ -18,18 +18,18 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the RDS instance (lowercase, hyphens only)
+          description: RDS 인스턴스 이름 (소문자, 하이픈만 사용)
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -37,11 +37,11 @@ spec:
               - github.com
             allowedOwners:
               - SAMJOYAP
-    - title: RDS Configuration
+    - title: RDS 설정
       properties:
         engine:
           type: string
-          title: Database Engine
+          title: 데이터베이스 엔진
           default: postgres
           enum:
             - postgres
@@ -55,7 +55,7 @@ spec:
             - 'Aurora MySQL 8.0'
         instanceClass:
           type: string
-          title: Instance Class
+          title: 인스턴스 클래스
           default: db.t3.micro
           enum:
             - db.t3.micro
@@ -63,46 +63,46 @@ spec:
             - db.t3.medium
             - db.r6g.large
           enumNames:
-            - 'db.t3.micro (2 vCPU, 1 GB) - Dev/Test'
+            - 'db.t3.micro (2 vCPU, 1 GB) - 개발/테스트'
             - 'db.t3.small (2 vCPU, 2 GB)'
             - 'db.t3.medium (2 vCPU, 4 GB)'
-            - 'db.r6g.large (2 vCPU, 16 GB) - Production'
+            - 'db.r6g.large (2 vCPU, 16 GB) - 프로덕션'
         multiAz:
           type: boolean
-          title: Multi-AZ Deployment
+          title: Multi-AZ 배포
           default: false
-          description: Enable standby replica in a different Availability Zone
+          description: 다른 가용 영역에 대기 복제본을 활성화합니다
         backupRetentionDays:
           type: integer
-          title: Backup Retention (days)
+          title: 백업 보존 기간 (일)
           default: 7
           enum: [7, 14, 30]
           enumNames:
-            - '7 days'
-            - '14 days'
-            - '30 days'
+            - '7일'
+            - '14일'
+            - '30일'
         performanceInsights:
           type: boolean
-          title: Enable Performance Insights
+          title: Performance Insights 활성화
           default: false
-          description: Not supported on db.t3.micro
+          description: db.t3.micro에서는 지원되지 않습니다
         cloudwatchLogs:
           type: boolean
-          title: Export Logs to CloudWatch
+          title: CloudWatch로 로그 내보내기
           default: true
         secretsManager:
           type: boolean
-          title: Store Credentials in Secrets Manager
+          title: Secrets Manager에 자격 증명 저장
           default: true
-          description: Auto-generates DB password and stores connection info
+          description: DB 비밀번호를 자동 생성하고 연결 정보를 저장합니다
         vpcNameFilter:
           type: string
-          title: VPC Name Tag
+          title: VPC Name 태그
           default: 'eksctl-sesac-ref-impl-cluster/VPC'
-          description: 'Name tag of the VPC where RDS will be deployed. Must contain private subnets spanning at least 2 AZs. (e.g. eksctl-my-cluster/VPC)'
+          description: 'RDS를 배포할 VPC의 Name 태그. 최소 2개의 가용 영역에 걸친 프라이빗 서브넷이 있어야 합니다. (예: eksctl-my-cluster/VPC)'
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -110,13 +110,13 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -128,7 +128,7 @@ spec:
           - database
           - backstage
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -148,30 +148,30 @@ spec:
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: '/catalog-info.yaml'
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions

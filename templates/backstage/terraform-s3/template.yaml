@@ -6,8 +6,8 @@ metadata:
     sesac.io/template-color: "#0284C7"
     sesac.io/template-stack: S3
   name: terraform-s3
-  title: Create S3 Bucket with Terraform
-  description: Creates an S3 bucket with optional versioning, KMS encryption, lifecycle rules, access logging, and static website hosting
+  title: Terraform으로 S3 버킷 생성
+  description: 버전 관리, KMS 암호화, 수명 주기 규칙, 액세스 로깅, 정적 웹 사이트 호스팅 옵션을 포함한 S3 버킷을 생성합니다
   tags:
     - terraform
     - aws
@@ -18,18 +18,18 @@ spec:
   owner: platform-team
   type: infrastructure
   parameters:
-    - title: Configuration
+    - title: 기본 설정
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: Name of the S3 bucket (lowercase, hyphens only — a random suffix will be appended for global uniqueness)
+          description: S3 버킷 이름 (소문자, 하이픈만 사용 — 전역 고유성을 위해 무작위 접미사가 추가됩니다)
           pattern: '^[a-z0-9-]+$'
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
           ui:field: RepoUrlPicker
           ui:options:
@@ -38,11 +38,11 @@ spec:
             allowedOwners:
               - SAMJOYAP
 
-    - title: S3 Configuration
+    - title: S3 설정
       properties:
         region:
           type: string
-          title: AWS Region
+          title: AWS 리전
           default: ap-northeast-2
           enum:
             - us-east-1
@@ -50,80 +50,80 @@ spec:
             - ap-northeast-2
             - eu-west-1
           enumNames:
-            - 'US East (N. Virginia)'
-            - 'US West (Oregon)'
-            - 'Asia Pacific (Seoul)'
-            - 'EU (Ireland)'
+            - '미국 동부 (버지니아 북부)'
+            - '미국 서부 (오리건)'
+            - '아시아 태평양 (서울)'
+            - '유럽 (아일랜드)'
         versioning:
           type: boolean
-          title: Enable Versioning
+          title: 버전 관리 활성화
           default: true
-          description: Keep multiple versions of objects to protect against accidental deletion
+          description: 실수로 인한 삭제를 방지하기 위해 객체의 여러 버전을 유지합니다
         kmsEncryption:
           type: boolean
-          title: Enable KMS Encryption (SSE-KMS)
+          title: KMS 암호화 활성화 (SSE-KMS)
           default: false
-          description: Use AWS KMS key for encryption. Default uses SSE-S3 (AES-256, no extra cost).
+          description: 암호화에 AWS KMS 키를 사용합니다. 기본값은 SSE-S3 (AES-256, 추가 비용 없음)입니다.
         forceDestroy:
           type: boolean
-          title: Allow Force Destroy
+          title: 강제 삭제 허용
           default: false
-          description: Allow Terraform to delete the bucket even if it contains objects (useful for dev/test)
+          description: 버킷에 객체가 있어도 Terraform이 버킷을 삭제할 수 있도록 허용합니다 (개발/테스트 환경에 유용)
 
-    - title: Lifecycle & Logging
+    - title: 수명 주기 및 로깅
       properties:
         lifecycleEnabled:
           type: boolean
-          title: Enable Lifecycle Rules
+          title: 수명 주기 규칙 활성화
           default: false
-          description: Automatically transition or expire objects to reduce storage costs
+          description: 스토리지 비용 절감을 위해 객체를 자동으로 전환하거나 만료시킵니다
         lifecycleIaDays:
           type: integer
-          title: Transition to Standard-IA (days)
+          title: Standard-IA로 전환 (일)
           default: 0
           enum: [0, 30, 60, 90]
           enumNames:
-            - 'Skip'
-            - 'After 30 days'
-            - 'After 60 days'
-            - 'After 90 days'
-          description: Move objects to Standard-Infrequent Access after N days (0 = skip)
+            - '건너뜀'
+            - '30일 후'
+            - '60일 후'
+            - '90일 후'
+          description: N일 후 객체를 Standard-Infrequent Access로 이동합니다 (0 = 건너뜀)
         lifecycleGlacierDays:
           type: integer
-          title: Transition to Glacier (days)
+          title: Glacier로 전환 (일)
           default: 0
           enum: [0, 90, 180, 365]
           enumNames:
-            - 'Skip'
-            - 'After 90 days'
-            - 'After 180 days'
-            - 'After 365 days'
-          description: Archive objects to Glacier after N days (0 = skip)
+            - '건너뜀'
+            - '90일 후'
+            - '180일 후'
+            - '365일 후'
+          description: N일 후 객체를 Glacier에 아카이브합니다 (0 = 건너뜀)
         lifecycleExpireDays:
           type: integer
-          title: Expire Objects (days)
+          title: 객체 만료 (일)
           default: 0
           enum: [0, 365, 730, 1825]
           enumNames:
-            - 'Never'
-            - 'After 1 year'
-            - 'After 2 years'
-            - 'After 5 years'
-          description: Permanently delete objects after N days (0 = never)
+            - '만료 안 함'
+            - '1년 후'
+            - '2년 후'
+            - '5년 후'
+          description: N일 후 객체를 영구 삭제합니다 (0 = 만료 안 함)
         accessLogging:
           type: boolean
-          title: Enable Access Logging
+          title: 액세스 로깅 활성화
           default: false
-          description: Log all requests to a separate S3 bucket for auditing
+          description: 감사를 위해 별도의 S3 버킷에 모든 요청을 기록합니다
         websiteEnabled:
           type: boolean
-          title: Enable Static Website Hosting
+          title: 정적 웹 사이트 호스팅 활성화
           default: false
-          description: Serve static content directly from the S3 bucket
+          description: S3 버킷에서 직접 정적 콘텐츠를 제공합니다
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
@@ -136,7 +136,7 @@ spec:
           - backstage
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -158,20 +158,20 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: register
-      name: Register
+      name: 카탈로그 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -179,12 +179,12 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: 카탈로그에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
-      - title: Open in GitHub
+      - title: GitHub에서 열기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}
-      - title: View GitHub Actions
+      - title: GitHub Actions 보기
         icon: github
         url: ${{ steps['create-repo'].output.remoteUrl }}/actions
