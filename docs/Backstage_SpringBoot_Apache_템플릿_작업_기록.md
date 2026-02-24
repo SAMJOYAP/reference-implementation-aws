@@ -236,6 +236,8 @@ Ingress host 형식:
 
 - 최소 권한에 아래 action 포함 필요:
   - `ecr:BatchGetImage`
+  - `ecr:GetDownloadUrlForLayer`
+  - `ecr:BatchCheckLayerAvailability`
   - `ecr:DescribeImages`
 
 ### 12.5 Auto-merge 설정
