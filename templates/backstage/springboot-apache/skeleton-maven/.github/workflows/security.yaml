@@ -173,25 +173,8 @@ jobs:
       - name: Verify Cosign signature
         env:
           COSIGN_EXPERIMENTAL: "true"
-        shell: bash
         run: |
-          set +e
-          VERIFY_OUTPUT="$(cosign verify \
+          cosign verify \
             --certificate-identity-regexp="https://github.com/{% raw %}${{ github.repository }}{% endraw %}" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            "$IMAGE_URI" 2>&1)"
-          VERIFY_RC=$?
-          set -e
-
-          echo "$VERIFY_OUTPUT"
-
-          if [ $VERIFY_RC -eq 0 ]; then
-            exit 0
-          fi
-
-          if echo "$VERIFY_OUTPUT" | grep -q "ecr:GetDownloadUrlForLayer"; then
-            echo "::warning::Cosign verify skipped due to missing ECR read permission (ecr:GetDownloadUrlForLayer)."
-            exit 0
-          fi
-
-          exit $VERIFY_RC
+            "$IMAGE_URI"
