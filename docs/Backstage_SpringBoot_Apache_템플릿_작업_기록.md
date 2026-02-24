@@ -418,13 +418,7 @@ Ingress host 형식:
 - 보완:
   - `workflow_run.head_sha` 기준 checkout으로 동일 커밋 기준 체인 유지
   - Maven 산출물(`target/*.jar`/`*.war`)을 `target/app-runtime.jar`로 정규화해 이미지 빌드 안정화
-
-### 16.4 템플릿 산출물 메타 화면 보정
-
-- 파일: `templates/backstage/springboot-apache/skeleton-base/src/main/resources/static/index.html`
-- 변경:
-  - Build Tool 항목 추가
-  - `gradle` 선택 시에만 Gradle Version 표출
+  - 호환성을 위해 `build/libs/app-runtime.jar`도 함께 생성하여 Dockerfile 경로 차이로 인한 실패 방지
 
 ### 16.5 파라미터 노출 정리 (2026-02-24 추가 반영)
 
@@ -436,3 +430,16 @@ Ingress host 형식:
 - 목적:
   - 입력 폼 단순화
   - 실제 선택한 빌드도구와 무관한 입력/안내 노출 제거
+
+### 16.6 ECR Push 단일화 및 CD 역할 분리 (2026-02-24 추가 반영)
+
+- 파일:
+  - `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/security.yaml`
+  - `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/cd.yaml`
+- 변경:
+  - ECR Push는 Security 워크플로우에서만 수행
+  - CD는 ECR 재빌드/재푸시를 하지 않고 GitOps 배포 갱신만 수행
+  - CD 시작 시 `imageTag(head_sha)`가 실제 ECR에 존재하는지 사전 검증
+- 목적:
+  - 중복 빌드/중복 push 제거
+  - 보안 검증 통과 이미지 기준으로만 배포 반영
