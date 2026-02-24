@@ -390,7 +390,6 @@ Ingress host 형식:
   - `buildTool` 라디오 선택 추가 (`maven` / `gradle`)
   - 기본값을 `maven`으로 설정
   - 템플릿 제목에서 `Gradle` 문구 제거
-  - `maven` 선택 시 보안 파이프라인 안내 문구 표시
 
 ### 16.2 Gradle 경로 유지 + Maven 경로 오버레이 분기
 
@@ -421,3 +420,13 @@ Ingress host 형식:
 - 변경:
   - Build Tool 항목 추가
   - `gradle` 선택 시에만 Gradle Version 표출
+
+### 16.5 파라미터 노출 정리 (2026-02-24 추가 반영)
+
+- 파일: `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - `Gradle Version` 필드를 `buildTool=gradle`일 때만 노출되도록 이동
+  - `maven` 선택 시 노출되던 보안 파이프라인 안내 텍스트 필드 제거
+- 목적:
+  - 입력 폼 단순화
+  - 실제 선택한 빌드도구와 무관한 입력/안내 노출 제거
