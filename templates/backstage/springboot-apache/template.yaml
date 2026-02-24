@@ -90,15 +90,6 @@ spec:
             - 3.2.12
             - 3.3.6
             - 3.4.5
-        gradleVersion:
-          type: string
-          title: Gradle Version
-          description: 프로젝트 빌드에 사용할 Gradle 버전입니다.
-          default: '8.10.2'
-          enum:
-            - '8.8'
-            - '8.10.2'
-            - '8.12.1'
         packaging:
           type: string
           title: 패키징 방식
@@ -128,17 +119,18 @@ spec:
             - properties:
                 buildTool:
                   enum: [maven]
-                securityPipelineNote:
-                  type: string
-                  title: 보안 파이프라인 안내
-                  default: Maven 선택 시 DevSecOps CI/CD(SAST/SCA, Trivy 이미지 스캔, SBOM 생성, Cosign 서명/검증)가 기본 파이프라인으로 동작합니다.
-                  ui:widget: textarea
-                  ui:options:
-                    rows: 4
-                  readOnly: true
             - properties:
                 buildTool:
                   enum: [gradle]
+                gradleVersion:
+                  type: string
+                  title: Gradle Version
+                  description: 프로젝트 빌드에 사용할 Gradle 버전입니다.
+                  default: '8.10.2'
+                  enum:
+                    - '8.8'
+                    - '8.10.2'
+                    - '8.12.1'
     - title: 네트워크 옵션
       properties:
         servicePort:
