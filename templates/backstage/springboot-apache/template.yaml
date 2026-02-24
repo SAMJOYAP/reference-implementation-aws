@@ -95,9 +95,6 @@ spec:
           title: 패키징 방식
           description: 배포 산출물 패키징 형식을 선택합니다.
           default: jar
-          enum:
-            - jar
-            - war
         useActuator:
           type: boolean
           title: Spring Actuator 사용
@@ -128,9 +125,22 @@ spec:
             - properties:
                 buildTool:
                   enum: [maven]
+                packaging:
+                  type: string
+                  title: 패키징 방식
+                  default: jar
+                  enum:
+                    - jar
             - properties:
                 buildTool:
                   enum: [gradle]
+                packaging:
+                  type: string
+                  title: 패키징 방식
+                  default: jar
+                  enum:
+                    - jar
+                    - war
                 gradleVersion:
                   type: string
                   title: Gradle Version
