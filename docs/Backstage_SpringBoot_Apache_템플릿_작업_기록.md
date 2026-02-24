@@ -398,21 +398,26 @@ Ingress host 형식:
 - `maven` 선택:
   - `template-maven-overlay` step으로 `skeleton-maven` 오버레이 적용
   - 오버레이 대상:
-    - `.github/workflows/ci.yaml` (`DevSecOps Pipeline`)
+    - `.github/workflows/ci.yaml` (`CI`)
+    - `.github/workflows/security.yaml` (`Security / DevSecOps Pipeline`)
+    - `.github/workflows/cd.yaml` (`CD`)
     - `pom.xml`
     - `Dockerfile`
     - `README.md`
 
-### 16.3 Maven 선택 시 DevSecOps Pipeline 적용
+### 16.3 Maven 워크플로우 순서 보장 (CI -> Security -> CD)
 
-- 파일: `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/ci.yaml`
-- 주요 단계:
-  - Stage 1: SonarQube 기반 SAST/SCA (`mvn clean verify sonar:sonar`)
-  - Stage 2: Docker Build -> Trivy Scan -> SBOM -> Cosign Sign/Verify -> ECR Push
+- CI (`ci.yaml`)
+  - 기본 빌드/테스트만 수행 (`mvn clean verify`)
+- Security (`security.yaml`)
+  - 트리거: CI 성공 시 `workflow_run`
+  - SonarQube SAST/SCA + Trivy + SBOM + Cosign + ECR Push 수행
+- CD (`cd.yaml`)
+  - 트리거: Security 워크플로우 성공 시 `workflow_run`
+  - 따라서 CD가 CI/보안 파이프라인보다 먼저 실행되지 않도록 강제됨
 - 보완:
-  - ECR 저장소 자동 생성 step 추가
-  - Maven 캐시(`actions/setup-java` cache) 적용
-  - 기존 CD 워크플로(`cd.yaml`)는 Gradle 경로와 동일하게 유지
+  - `workflow_run.head_sha` 기준 checkout으로 동일 커밋 기준 체인 유지
+  - Maven 산출물(`target/*.jar`/`*.war`)을 `target/app-runtime.jar`로 정규화해 이미지 빌드 안정화
 
 ### 16.4 템플릿 산출물 메타 화면 보정
 
@@ -425,7 +430,8 @@ Ingress host 형식:
 
 - 파일: `templates/backstage/springboot-apache/template.yaml`
 - 변경:
-  - `Gradle Version` 필드를 `buildTool=gradle`일 때만 노출되도록 이동
+  - `Gradle Version` 필드를 `buildTool=gradle`일 때만 노출
+  - `ui:order`로 `buildTool` 바로 아래에 표시되도록 정렬
   - `maven` 선택 시 노출되던 보안 파이프라인 안내 텍스트 필드 제거
 - 목적:
   - 입력 폼 단순화
