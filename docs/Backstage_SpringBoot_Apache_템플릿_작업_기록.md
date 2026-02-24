@@ -400,12 +400,10 @@ Ingress host 형식:
 
 ### 16.3 Trivy 정책 운영값
 
-- 보고용 스캔:
-  - `CRITICAL,HIGH`, `exit-code: 0`
-- 게이트 스캔:
-  - `CRITICAL`만 차단, `exit-code: 1`
+- 정책:
+  - `CRITICAL,HIGH`, `exit-code: 1`
 - 결과:
-  - HIGH는 리포트로 관리하고, CRITICAL만 배포 차단
+  - HIGH/CRITICAL 모두 배포 차단
 
 ### 16.4 신규 앱 도메인 접속 불가 이슈(`java-sec-test`) 대응
 
