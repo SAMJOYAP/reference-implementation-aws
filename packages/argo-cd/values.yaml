@@ -143,6 +143,7 @@ configs:
       g, superuser, role:admin
       p, role:backstage, applications, get, */*, allow
       p, role:backstage, applications, list, */*, allow
+      p, role:backstage, applications, delete, */*, allow
       p, role:backstage, projects, get, *, allow
       p, role:backstage, projects, list, *, allow
       p, role:backstage, clusters, get, *, allow
