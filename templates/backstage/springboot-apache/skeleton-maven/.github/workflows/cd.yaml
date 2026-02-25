@@ -62,6 +62,8 @@ jobs:
       APP_NAME: ${{ values.projectName }}
       APP_HOST: ${{ values.hostPrefix }}.${{ values.baseDomain }}
       IMAGE_TAG: {% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}
+      TARGET_EKS_CLUSTER: ${{ values.eksCluster }}
+      HUB_EKS_CLUSTER: sesac-ref-impl
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -186,7 +188,7 @@ jobs:
           sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
           sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
 
-          if [ ! -f "$MANIFEST_DIR/ingress.yaml" ]; then
+          if [ "$TARGET_EKS_CLUSTER" = "$HUB_EKS_CLUSTER" ]; then
             cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
           apiVersion: networking.k8s.io/v1
           kind: Ingress
@@ -212,6 +214,30 @@ jobs:
               - hosts:
                   - $APP_HOST
                 secretName: $APP_NAME-tls
+          YAML
+          else
+            cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: $APP_NAME
+            namespace: $APP_NAME
+            annotations:
+              alb.ingress.kubernetes.io/scheme: internet-facing
+              alb.ingress.kubernetes.io/target-type: ip
+          spec:
+            ingressClassName: alb
+            rules:
+              - host: $APP_HOST
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: $APP_NAME
+                          port:
+                            number: 80
           YAML
           fi
 

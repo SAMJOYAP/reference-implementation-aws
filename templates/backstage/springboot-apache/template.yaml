@@ -288,6 +288,7 @@ spec:
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
           baseDomain: ${{ parameters.baseDomain }}
+          eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
@@ -314,6 +315,7 @@ spec:
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
           baseDomain: ${{ parameters.baseDomain }}
+          eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
