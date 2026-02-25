@@ -144,8 +144,11 @@ configs:
       g, admin, role:admin
       p, admin, applications, *, *, allow
       p, admin, applications, get, */*, allow
+      p, admin, applications, get, */*/*, allow
       p, admin, applications, list, */*, allow
+      p, admin, applications, list, */*/*, allow
       p, admin, applications, delete, */*, allow
+      p, admin, applications, delete, */*/*, allow
       p, role:backstage, applications, get, */*, allow
       p, role:backstage, applications, list, */*, allow
       p, role:backstage, applications, delete, */*, allow
