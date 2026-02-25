@@ -1,4 +1,5 @@
 name: DevSecOps Pipeline
+run-name: DevSecOps Pipeline
 
 on:
   push:

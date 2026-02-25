@@ -1,4 +1,5 @@
 name: CD
+run-name: CD
 
 on:
   workflow_run:
