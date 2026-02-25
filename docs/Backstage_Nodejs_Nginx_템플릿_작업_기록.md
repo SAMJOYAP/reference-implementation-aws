@@ -499,3 +499,19 @@ refusing to allow a GitHub App to create or update workflow
 - IRSA Role 권한 최소 기준:
   - `acm:ListCertificates`
   - (권장) `acm:DescribeCertificate`
+
+### 12.4 ACM Picker 최종 UX 정리 (2026-02-25 추가)
+
+- 파일: `backstage-already11/packages/app/src/components/scaffolder/AcmCertificatePickerField.tsx`
+- 변경:
+  - 드롭다운 항목을 `*.` 와일드카드 도메인 중심으로 노출
+  - 하단의 `선택된 ACM 도메인`, `선택된 ACM ARN` 표시 필드 제거
+  - 기본 도메인(`already11.cloud`) 인증서도 UI에서는 `*.already11.cloud` 형태로 선택 가능하도록 보정
+- 목적:
+  - 사용자 선택 실수(루트/서브도메인 혼동) 최소화
+  - 입력 폼 단순화
+
+### 12.5 운영 실조치 메모
+
+- `ergerh` 생성 시 Ingress는 HTTPS annotation이 정상 생성됨을 확인
+- 실제 접속 이슈 원인은 인증서 도메인 미스매치였고, ARN 교체로 정상화

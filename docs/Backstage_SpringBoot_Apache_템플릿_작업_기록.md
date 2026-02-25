@@ -607,3 +607,20 @@ Ingress host 형식:
   - `eks.amazonaws.com/role-arn` annotation 추가
 - 목적:
   - ACM 조회 API 인증(`Missing credentials`) 이슈를 Access Key 주입 대신 IRSA로 해결
+
+### 18.4 IRSA/인증서 운영 후속 확인 (2026-02-25 추가)
+
+- 확인 내용:
+  - `backstage-already11` 백엔드에서 ACM/EKS 조회는 IRSA 권한 정합성이 선행 조건
+  - ServiceAccount annotation만으로는 충분하지 않고 IAM Role 실체/Trust/Permission이 모두 필요
+- 실운영 반영:
+  - IRSA 역할 생성 및 신뢰정책/권한 부여 후 Pod 내부 AWS CLI 검증 완료
+
+### 18.5 HTTPS 접속 검증 시 체크 순서
+
+1. Ingress annotation 존재 여부 (`certificate-arn`, `listen-ports`, `ssl-redirect`)
+2. Ingress host와 선택한 ACM 인증서 SAN 정합성
+3. ALB DNS/도메인 연결 상태
+
+- 메모:
+  - Ingress가 HTTPS 설정이어도 인증서 SAN 불일치면 브라우저 기준 실패로 보인다.
