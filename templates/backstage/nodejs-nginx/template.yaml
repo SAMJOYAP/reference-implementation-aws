@@ -96,7 +96,7 @@ spec:
           type: string
           title: 기본 도메인
           description: Ingress 호스트를 구성할 때 사용할 기본 도메인
-          default: sesac.already11.cloud
+          default: already11.cloud
     - title: 클라우드/배포 옵션
       required:
         - eksCluster
@@ -159,7 +159,7 @@ spec:
                 acmCertificateArn:
                   type: string
                   title: ACM Certificate ARN (직접 입력)
-                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN) ARN을 입력하세요.
+                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서(SAN: *.already11.cloud 또는 FQDN) ARN을 입력하세요.
 
   steps:
     - id: preflight-argocd
