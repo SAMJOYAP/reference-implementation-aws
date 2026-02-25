@@ -141,6 +141,7 @@ configs:
   rbac:
     policy.csv: |
       g, superuser, role:admin
+      g, admin, role:admin
       p, role:backstage, applications, get, */*, allow
       p, role:backstage, applications, list, */*, allow
       p, role:backstage, applications, delete, */*, allow
