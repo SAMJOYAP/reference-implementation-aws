@@ -30,4 +30,4 @@ Deployment manifests are managed in the GitOps repository.
 - Security: `.github/workflows/security.yaml` (`Security / DevSecOps Pipeline`)
 - CD: `.github/workflows/cd.yaml` (`CD`, triggers after Security workflow success on `main`)
 - Includes: SonarQube SAST/SCA, Trivy image scan, SBOM, Cosign sign/verify, ECR push
-- Required secrets: `AWS_ROLE_ARN_SEC_OPS`, `SONAR_TOKEN`, `SONAR_HOST_URL`
+- Required secrets: `AWS_ROLE_ARN_SEC_OPS`, `SONAR_TOKEN_HUB`, `SONAR_HOST_URL_HUB`
