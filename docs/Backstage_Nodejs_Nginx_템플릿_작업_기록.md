@@ -471,3 +471,31 @@ refusing to allow a GitHub App to create or update workflow
   - 미등록이면 자동 등록 시도
   - 이미 등록되어 있으면 skip
   - 등록 후 재조회 검증까지 통과해야 앱 생성 진행
+
+---
+
+## 12. 최신 반영 사항 (2026-02-25)
+
+### 12.1 네트워크 옵션 중심 UX로 재배치
+
+- 파일: `templates/backstage/nodejs-nginx/template.yaml`
+- 변경:
+  - `ACM 인증서 도메인 선택`을 `클라우드/배포 옵션`에서 `네트워크 옵션`으로 이동
+  - `hostPrefix` 입력을 ACM 선택 필드 바로 아래로 배치
+  - 기존 `기본 도메인(baseDomain)` 사용자 입력 필드 제거
+  - 템플릿 내부 생성 값은 `already11.cloud` 고정 사용
+
+### 12.2 ACM 선택 기반 도메인 안내 강화
+
+- `AcmCertificatePicker`에서 선택된 도메인/ARN을 모두 표시하도록 UI 확장
+- `hostPrefix` helperText에 선택한 ACM 도메인을 함께 안내하도록 반영
+- 목표:
+  - 사용자가 최종 호스트 형식(`{prefix}.already11.cloud`)을 입력 단계에서 즉시 확인
+
+### 12.3 운영 체크포인트
+
+- 템플릿 반영만으로 ACM 목록이 조회되지는 않음
+- Backstage backend Pod에 AWS 인증(IRSA)이 연결되어야 함
+- IRSA Role 권한 최소 기준:
+  - `acm:ListCertificates`
+  - (권장) `acm:DescribeCertificate`

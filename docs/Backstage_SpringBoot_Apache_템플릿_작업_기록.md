@@ -531,3 +531,79 @@ Ingress host 형식:
 - 변경:
   - `remoteUrl` 합성 표현식 제거
   - 링크 URL은 `https://github.com/${owner}/${repo}` 형태로 직접 구성
+
+## 17. 최신 반영 사항 (2026-02-25)
+
+### 17.1 비허브 EKS Ingress 전략 분기 고정
+
+- 파일:
+  - `templates/backstage/springboot-apache/skeleton-base/.github/workflows/cd.yaml`
+  - `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/cd.yaml`
+- 변경:
+  - `eksCluster == sesac-ref-impl`(허브)면 `nginx + cert-manager` 경로 유지
+  - 그 외 비허브 EKS면 `alb ingressClass` + ALB annotation(`scheme`, `target-type`)으로 생성
+- 목적:
+  - 비허브 EKS에서 `IngressClass "nginx" not found`로 생성 실패하던 문제 재발 방지
+
+### 17.2 Spring Boot 기본 버전 상향
+
+- 파일: `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - `springBootVersion` 기본값을 `3.4.10`으로 상향
+  - 선택 enum도 `3.4.10` 기준으로 최신화
+- 목적:
+  - 신규 생성 프로젝트의 기본 의존성 보안 수준 상향
+
+### 17.3 신규 Java 앱 Deployment 리소스 limit 기본값 반영
+
+- 파일:
+  - `templates/backstage/springboot-apache/skeleton-base/.github/workflows/cd.yaml`
+  - `templates/backstage/springboot-apache/skeleton-maven/.github/workflows/cd.yaml`
+- 변경:
+  - GitOps Deployment bootstrap 시 기본 `resources.limits` 추가
+    - `cpu: 4000m`
+    - `memory: 2Gi`
+- 메모:
+  - 위 값은 "초기 limit" 기준이며 운영 관측 후 조정 전제
+
+### 17.4 현재 비허브 배포 차단 원인 확정 (Kyverno)
+
+- 증상:
+  - Argo CD에서 Deployment만 OutOfSync/Missing
+  - Ingress/Service는 생성되나 Pod 미생성
+- 확정 원인:
+  - `verify-cosign-signature` 정책에서 이미지 검증 실패 시 Deployment admission 차단
+  - 로그 기준: `failed to verify image ... context canceled`
+- 해석:
+  - CI에서 `cosign sign/verify`를 통과해도, 클러스터 배포 시 Kyverno의 재검증 단계를 별도로 통과해야 최종 배포 완료
+
+## 18. 최신 반영 사항 (2026-02-25 추가)
+
+### 18.1 네트워크 옵션 기준 입력 동선 정리
+
+- 파일: `templates/backstage/springboot-apache/template.yaml`
+- 변경:
+  - `ACM 인증서 도메인 선택`을 `네트워크 옵션`으로 이동
+  - `hostPrefix` 입력을 ACM 선택 바로 아래에 배치
+  - 사용자 입력 `baseDomain` 필드는 제거
+  - 템플릿 생성 값은 `already11.cloud`로 고정
+
+### 18.2 ACM 선택과 접두사 입력 연계 UX
+
+- Backstage 커스텀 필드 동작:
+  - `AcmCertificatePicker`: 선택된 ACM 도메인 + ARN을 동시에 표시
+  - `DefaultFromProjectText(hostPrefix)`: helperText에 선택 도메인 기반 접속 예시 표시
+- 기대 효과:
+  - 인증서 도메인과 실제 접속 호스트를 입력 단계에서 일치시켜 실수 감소
+
+### 18.3 IRSA 운영값 동기화
+
+- 파일:
+  - `packages/backstage/values-already11.yaml`
+  - `gitops/apps/backstage-already11/values.yaml`
+  - `gitops/apps/backstage-already11/values-already11.yaml`
+- 반영:
+  - `serviceAccount.name: backstage-already11`
+  - `eks.amazonaws.com/role-arn` annotation 추가
+- 목적:
+  - ACM 조회 API 인증(`Missing credentials`) 이슈를 Access Key 주입 대신 IRSA로 해결
