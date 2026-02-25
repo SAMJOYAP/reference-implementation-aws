@@ -3,7 +3,7 @@ run-name: CD
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["DevSecOps Pipeline"]
     types: [completed]
     branches: [main]
 
