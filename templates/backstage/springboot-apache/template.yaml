@@ -192,7 +192,7 @@ spec:
         acmCertificateSource:
           type: string
           title: ACM 인증서 선택 방식
-          description: 비허브(ALB) HTTPS 인증서 입력 방식을 선택합니다.
+          description: ALB(허브/비허브) HTTPS 인증서 입력 방식을 선택합니다.
           default: preset
           enum:
             - preset
@@ -226,7 +226,7 @@ spec:
                 acmCertificateArnPreset:
                   type: string
                   title: ACM Certificate ARN (프리셋)
-                  description: 비허브(ALB)에서는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN)를 선택해야 합니다.
+                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN)를 선택해야 합니다.
                   default: arn:aws:acm:ap-northeast-2:710232982381:certificate/301bfe52-70a7-4470-8dbf-e689f4881034
                   enum:
                     - arn:aws:acm:ap-northeast-2:710232982381:certificate/301bfe52-70a7-4470-8dbf-e689f4881034
@@ -238,7 +238,7 @@ spec:
                 acmCertificateArn:
                   type: string
                   title: ACM Certificate ARN (직접 입력)
-                  description: 비허브(ALB)에서는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN) ARN을 입력하세요.
+                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN) ARN을 입력하세요.
 
   steps:
     - id: preflight-argocd
