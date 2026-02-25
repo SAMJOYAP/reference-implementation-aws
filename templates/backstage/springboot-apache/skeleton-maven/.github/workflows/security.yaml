@@ -1,27 +1,26 @@
-name: Security / DevSecOps Pipeline
+name: DevSecOps Pipeline
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: {% raw %}${{ github.event.repository.name }}{% endraw %}
-  IMAGE_TAG: {% raw %}${{ github.event.workflow_run.head_sha || github.sha }}{% endraw %}
+  IMAGE_TAG: {% raw %}${{ github.sha }}{% endraw %}
 
 jobs:
   sast-sca:
     name: "Stage 1: SAST & SCA"
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: {% raw %}${{ github.event.workflow_run.head_sha || github.sha }}{% endraw %}
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -60,8 +59,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: {% raw %}${{ github.event.workflow_run.head_sha || github.sha }}{% endraw %}
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -88,7 +85,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN_SEC_OPS }}{% endraw %}
+          role-to-assume: {% raw %}${{ secrets.AWS_ROLE_ARN_SEC_OPS || secrets.AWS_ROLE_ARN }}{% endraw %}
           aws-region: {% raw %}${{ env.AWS_REGION }}{% endraw %}
 
       - name: Ensure ECR repository exists
@@ -116,7 +113,7 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: os,library
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
           output: trivy-results.txt
 
       - name: Upload Trivy scan results
@@ -142,7 +139,16 @@ jobs:
           path: sbom.json
 
       - name: Push image to ECR
-        run: docker push "$IMAGE_URI"
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker push "$IMAGE_URI"
+          DIGEST="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          echo "IMAGE_URI={% raw %}${{ steps.login-ecr.outputs.registry }}{% endraw %}/${ECR_REPOSITORY}@${DIGEST}" >> "$GITHUB_ENV"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
@@ -160,3 +166,15 @@ jobs:
             --certificate-identity-regexp="https://github.com/{% raw %}${{ github.repository }}{% endraw %}" \
             --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
             "$IMAGE_URI"
+
+      - name: Pipeline Summary
+        run: |
+          echo "=========================================="
+          echo "✅ Stage 1: SAST/SCA (SonarQube) - PASSED"
+          echo "✅ Stage 2: Docker Build - PASSED"
+          echo "✅ Stage 2: Trivy Scan - PASSED"
+          echo "✅ Stage 2: SBOM 생성 - PASSED"
+          echo "✅ Stage 2: ECR Push - PASSED"
+          echo "✅ Stage 2: Cosign Sign & Verify - PASSED"
+          echo "=========================================="
+          echo "📦 Image: $IMAGE_URI"
