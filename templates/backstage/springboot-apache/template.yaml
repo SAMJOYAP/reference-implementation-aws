@@ -189,10 +189,17 @@ spec:
           ui:options:
             region: ap-northeast-2
             hubClusterName: sesac-ref-impl
-        acmCertificateArn:
+        acmCertificateSource:
           type: string
-          title: ACM Certificate ARN (비허브 HTTPS)
-          description: 비허브(ALB) 클러스터에 배포할 때 사용할 ACM 인증서 ARN입니다. 허브 클러스터(nginx+cert-manager) 배포 시에는 비워둘 수 있습니다.
+          title: ACM 인증서 선택 방식
+          description: 비허브(ALB) HTTPS 인증서 입력 방식을 선택합니다.
+          default: preset
+          enum:
+            - preset
+            - custom
+          enumNames:
+            - 프리셋에서 선택(권장)
+            - ARN 직접 입력
         targetNamespace:
           type: string
           title: 대상 Namespace
@@ -210,6 +217,28 @@ spec:
           ui:field: ArgoProjectPicker
           ui:options:
             argoInstance: in-cluster
+      dependencies:
+        acmCertificateSource:
+          oneOf:
+            - properties:
+                acmCertificateSource:
+                  enum: [preset]
+                acmCertificateArnPreset:
+                  type: string
+                  title: ACM Certificate ARN (프리셋)
+                  description: 비허브(ALB)에서는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN)를 선택해야 합니다.
+                  default: arn:aws:acm:ap-northeast-2:710232982381:certificate/301bfe52-70a7-4470-8dbf-e689f4881034
+                  enum:
+                    - arn:aws:acm:ap-northeast-2:710232982381:certificate/301bfe52-70a7-4470-8dbf-e689f4881034
+                  enumNames:
+                    - sesac.already11.cloud wildcard (preset)
+            - properties:
+                acmCertificateSource:
+                  enum: [custom]
+                acmCertificateArn:
+                  type: string
+                  title: ACM Certificate ARN (직접 입력)
+                  description: 비허브(ALB)에서는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN) ARN을 입력하세요.
 
   steps:
     - id: preflight-argocd
@@ -269,7 +298,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
-          acmCertificateArn: ${{ parameters.acmCertificateArn }}
+          acmCertificateArn: ${{ parameters.acmCertificateArn || parameters.acmCertificateArnPreset }}
 
     - id: template-gradle-overlay
       if: ${{ parameters.buildTool == 'gradle' }}
@@ -298,7 +327,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
-          acmCertificateArn: ${{ parameters.acmCertificateArn }}
+          acmCertificateArn: ${{ parameters.acmCertificateArn || parameters.acmCertificateArnPreset }}
 
     - id: template-maven-overlay
       if: ${{ parameters.buildTool == 'maven' }}
@@ -326,7 +355,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
-          acmCertificateArn: ${{ parameters.acmCertificateArn }}
+          acmCertificateArn: ${{ parameters.acmCertificateArn || parameters.acmCertificateArnPreset }}
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
