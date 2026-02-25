@@ -142,6 +142,7 @@ configs:
     policy.csv: |
       g, superuser, role:admin
       g, admin, role:admin
+      p, admin, applications, *, *, allow
       p, admin, applications, get, */*, allow
       p, admin, applications, list, */*, allow
       p, admin, applications, delete, */*, allow
