@@ -301,7 +301,12 @@ jobs:
           VERSION_TAG: {% raw %}${{ steps.version.outputs.version_tag }}{% endraw %}
         shell: bash
         run: |
-          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$VERSION_TAG"
+          DIGEST="$(aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$VERSION_TAG" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY@$DIGEST"
           DEPLOYMENT_FILE="gitops-repo/apps/$APP_NAME/manifests/deployment.yaml"
           sed -i -E "s|(^[[:space:]]*image:[[:space:]]*).*$|\1$IMAGE_URI|" "$DEPLOYMENT_FILE"
 

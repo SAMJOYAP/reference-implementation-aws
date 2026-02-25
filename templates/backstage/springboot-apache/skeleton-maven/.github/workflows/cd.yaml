@@ -77,11 +77,12 @@ jobs:
           set -euo pipefail
           ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
           REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-
-          aws ecr describe-images \
+          DIGEST="$(aws ecr describe-images \
             --repository-name "${ECR_REPOSITORY}" \
-            --image-ids imageTag="${IMAGE_TAG}" >/dev/null
+            --image-ids imageTag="${IMAGE_TAG}" \
+            --query 'imageDetails[0].imageDigest' \
+            --output text)"
+          IMAGE_URI="${REGISTRY}/${ECR_REPOSITORY}@${DIGEST}"
 
           echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
 
