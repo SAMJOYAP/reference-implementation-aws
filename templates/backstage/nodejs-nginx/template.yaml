@@ -110,6 +110,17 @@ spec:
           ui:options:
             region: ap-northeast-2
             hubClusterName: sesac-ref-impl
+        acmCertificateSource:
+          type: string
+          title: ACM 인증서 선택 방식
+          description: ALB(허브/비허브) HTTPS 인증서 입력 방식을 선택합니다.
+          default: preset
+          enum:
+            - preset
+            - custom
+          enumNames:
+            - 프리셋에서 선택(권장)
+            - ARN 직접 입력
         targetNamespace:
           type: string
           title: 대상 Namespace
@@ -127,6 +138,28 @@ spec:
           ui:field: ArgoProjectPicker
           ui:options:
             argoInstance: in-cluster
+      dependencies:
+        acmCertificateSource:
+          oneOf:
+            - properties:
+                acmCertificateSource:
+                  enum: [preset]
+                acmCertificateArnPreset:
+                  type: string
+                  title: ACM Certificate ARN (프리셋)
+                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서를 선택하세요. (발급 상태 ISSUED만 노출)
+                  ui:field: AcmCertificatePicker
+                  ui:options:
+                    region: ap-northeast-2
+                    statuses:
+                      - ISSUED
+            - properties:
+                acmCertificateSource:
+                  enum: [custom]
+                acmCertificateArn:
+                  type: string
+                  title: ACM Certificate ARN (직접 입력)
+                  description: ALB를 사용할 때는 앱 도메인과 일치하는 인증서(SAN: *.sesac.already11.cloud 또는 FQDN) ARN을 입력하세요.
 
   steps:
     - id: preflight-argocd
@@ -179,6 +212,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
+          acmCertificateArn: ${{ parameters.acmCertificateArn || parameters.acmCertificateArnPreset }}
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
