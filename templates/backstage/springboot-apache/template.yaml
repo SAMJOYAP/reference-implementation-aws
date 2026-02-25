@@ -85,11 +85,11 @@ spec:
           type: string
           title: Spring Boot Version
           description: 애플리케이션 프레임워크로 사용할 Spring Boot 버전입니다.
-          default: 3.4.5
+          default: 3.4.10
           enum:
             - 3.2.12
             - 3.3.6
-            - 3.4.5
+            - 3.4.10
         packaging:
           type: string
           title: 패키징 방식
