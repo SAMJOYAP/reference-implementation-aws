@@ -11,3 +11,7 @@ backstage:
     registry: 710232982381.dkr.ecr.ap-northeast-2.amazonaws.com
     repository: backstage-already11
     tag: 1.0.1
+serviceAccount:
+  name: backstage-already11
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::710232982381:role/backstage-already11-irsa-role

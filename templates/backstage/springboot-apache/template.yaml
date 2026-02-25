@@ -162,6 +162,16 @@ spec:
           title: Ingress 생성
           description: 선택하면 외부 접근을 위한 Ingress 매니페스트를 생성합니다.
           default: true
+        acmCertificateArn:
+          type: string
+          title: ACM 인증서 도메인 선택
+          description: 등록된 ACM 인증서 도메인 목록에서 선택하면 도메인과 ARN이 하단에 표시됩니다.
+          ui:field: AcmCertificatePicker
+          ui:options:
+            region: ap-northeast-2
+            statuses:
+              - ISSUED
+            domainSuffix: already11.cloud
         hostPrefix:
           type: string
           title: 호스트 접두사
@@ -170,12 +180,11 @@ spec:
           ui:field: DefaultFromProjectText
           ui:options:
             sourceField: projectName
+            acmArnField: acmCertificateArn
+            region: ap-northeast-2
+            statuses:
+              - ISSUED
             helperText: 호스트 접두사를 비우면 프로젝트 이름(projectName)으로 자동 등록됩니다.
-        baseDomain:
-          type: string
-          title: 기본 도메인
-          description: Ingress 호스트를 구성할 때 사용할 기본 도메인입니다.
-          default: already11.cloud
     - title: 클라우드/배포 옵션
       required:
         - eksCluster
@@ -189,15 +198,6 @@ spec:
           ui:options:
             region: ap-northeast-2
             hubClusterName: sesac-ref-impl
-        acmCertificateArn:
-          type: string
-          title: ACM 인증서 도메인 선택
-          description: 등록된 ACM 인증서 도메인 목록에서 선택하면 ARN이 하단에 자동 표시됩니다.
-          ui:field: AcmCertificatePicker
-          ui:options:
-            region: ap-northeast-2
-            statuses:
-              - ISSUED
         targetNamespace:
           type: string
           title: 대상 Namespace
@@ -267,7 +267,7 @@ spec:
           useLombok: ${{ parameters.useLombok }}
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
-          baseDomain: ${{ parameters.baseDomain }}
+          baseDomain: already11.cloud
           eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -296,7 +296,7 @@ spec:
           useLombok: ${{ parameters.useLombok }}
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
-          baseDomain: ${{ parameters.baseDomain }}
+          baseDomain: already11.cloud
           eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -324,7 +324,7 @@ spec:
           useLombok: ${{ parameters.useLombok }}
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
-          baseDomain: ${{ parameters.baseDomain }}
+          baseDomain: already11.cloud
           eksCluster: ${{ parameters.eksCluster }}
           owner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -342,7 +342,7 @@ spec:
           projectName: ${{ parameters.projectName }}
           servicePort: ${{ parameters.servicePort }}
           hostPrefix: ${{ parameters.hostPrefix }}
-          baseDomain: ${{ parameters.baseDomain }}
+          baseDomain: already11.cloud
 
     - id: init-repo
       name: 저장소 초기화
