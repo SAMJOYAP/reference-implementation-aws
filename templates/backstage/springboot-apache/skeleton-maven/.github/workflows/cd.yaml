@@ -65,6 +65,7 @@ jobs:
       IMAGE_TAG: {% raw %}${{ github.event.workflow_run.head_sha }}{% endraw %}
       TARGET_EKS_CLUSTER: ${{ values.eksCluster }}
       HUB_EKS_CLUSTER: sesac-ref-impl
+      ACM_CERTIFICATE_ARN: ${{ values.acmCertificateArn }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -197,6 +198,11 @@ jobs:
           sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
           sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
 
+          if [ "$TARGET_EKS_CLUSTER" != "$HUB_EKS_CLUSTER" ] && [ -z "${ACM_CERTIFICATE_ARN:-}" ]; then
+            echo "ACM_CERTIFICATE_ARN is required for non-hub(ALB) HTTPS ingress"
+            exit 1
+          fi
+
           if [ "$TARGET_EKS_CLUSTER" = "$HUB_EKS_CLUSTER" ]; then
             cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
           apiVersion: networking.k8s.io/v1
@@ -234,6 +240,9 @@ jobs:
             annotations:
               alb.ingress.kubernetes.io/scheme: internet-facing
               alb.ingress.kubernetes.io/target-type: ip
+              alb.ingress.kubernetes.io/certificate-arn: $ACM_CERTIFICATE_ARN
+              alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+              alb.ingress.kubernetes.io/ssl-redirect: '443'
           spec:
             ingressClassName: alb
             rules:

@@ -189,6 +189,10 @@ spec:
           ui:options:
             region: ap-northeast-2
             hubClusterName: sesac-ref-impl
+        acmCertificateArn:
+          type: string
+          title: ACM Certificate ARN (비허브 HTTPS)
+          description: 비허브(ALB) 클러스터에 배포할 때 사용할 ACM 인증서 ARN입니다. 허브 클러스터(nginx+cert-manager) 배포 시에는 비워둘 수 있습니다.
         targetNamespace:
           type: string
           title: 대상 Namespace
@@ -265,6 +269,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
+          acmCertificateArn: ${{ parameters.acmCertificateArn }}
 
     - id: template-gradle-overlay
       if: ${{ parameters.buildTool == 'gradle' }}
@@ -293,6 +298,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
+          acmCertificateArn: ${{ parameters.acmCertificateArn }}
 
     - id: template-maven-overlay
       if: ${{ parameters.buildTool == 'maven' }}
@@ -320,6 +326,7 @@ spec:
           repo: ${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
           gitopsOwner: ${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}
           gitopsRepo: gitops
+          acmCertificateArn: ${{ parameters.acmCertificateArn }}
 
     - id: template-ingress
       if: ${{ parameters.enableIngress }}
