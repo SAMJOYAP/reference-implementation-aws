@@ -42,6 +42,18 @@ jobs:
           SONAR_HOST_URL: {% raw %}${{ secrets.SONAR_HOST_URL }}{% endraw %}
 {% endif %}
         run: |
+          echo "[INFO] Sonar host: ${SONAR_HOST_URL}"
+          echo "[INFO] Sonar bootstrap endpoint check: ${SONAR_HOST_URL}/batch/index"
+          if ! curl -sS -m 15 -o /tmp/sonar_batch_index.out -w "%{http_code}" "${SONAR_HOST_URL}/batch/index" > /tmp/sonar_batch_index.code; then
+            echo "[ERROR] Sonar endpoint network check failed (curl error)"
+            exit 1
+          fi
+          HTTP_CODE="$(cat /tmp/sonar_batch_index.code)"
+          echo "[INFO] Sonar /batch/index HTTP code: ${HTTP_CODE}"
+          if [ "${HTTP_CODE}" -ge 500 ]; then
+            echo "[ERROR] Sonar server returned ${HTTP_CODE} on /batch/index"
+            exit 1
+          fi
           mvn clean verify sonar:sonar \
             -Dsonar.projectKey=${{ values.projectName }} \
             -Dsonar.projectName="${{ values.projectName }}" \
