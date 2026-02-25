@@ -2,10 +2,10 @@ name: DevSecOps Pipeline
 run-name: DevSecOps Pipeline
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [main, develop]
+  # workflow_run:
+  #   workflows: ["CI"]
+  #   types: [completed]
+  #   branches: [main, develop]
   workflow_dispatch:
 
 env:
