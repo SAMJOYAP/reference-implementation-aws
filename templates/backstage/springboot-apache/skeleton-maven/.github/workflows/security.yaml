@@ -35,13 +35,16 @@ jobs:
       - name: Build and run SonarQube analysis
         env:
 {% if values.eksCluster == 'sesac-ref-impl' %}
+          SONAR_PROFILE: HUB
           SONAR_TOKEN: {% raw %}${{ secrets.SONAR_TOKEN_HUB }}{% endraw %}
           SONAR_HOST_URL: {% raw %}${{ secrets.SONAR_HOST_URL_HUB }}{% endraw %}
 {% else %}
+          SONAR_PROFILE: DEFAULT
           SONAR_TOKEN: {% raw %}${{ secrets.SONAR_TOKEN }}{% endraw %}
           SONAR_HOST_URL: {% raw %}${{ secrets.SONAR_HOST_URL }}{% endraw %}
 {% endif %}
         run: |
+          echo "[INFO] SONAR_PROFILE=${SONAR_PROFILE}"
           echo "[INFO] Sonar host: ${SONAR_HOST_URL}"
           echo "[INFO] Sonar bootstrap endpoint check: ${SONAR_HOST_URL}/batch/index"
           if ! curl -sS -m 15 -o /tmp/sonar_batch_index.out -w "%{http_code}" "${SONAR_HOST_URL}/batch/index" > /tmp/sonar_batch_index.code; then
