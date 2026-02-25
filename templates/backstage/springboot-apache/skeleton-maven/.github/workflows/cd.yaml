@@ -198,7 +198,23 @@ jobs:
           sed -i -E "s|(^[[:space:]]*targetPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/service.yaml"
           sed -i -E "s|(^[[:space:]]*containerPort:[[:space:]]*).*$|\\18080|" "$MANIFEST_DIR/deployment.yaml"
 
-          if [ -n "${ACM_CERTIFICATE_ARN:-}" ]; then
+          EFFECTIVE_ACM_CERTIFICATE_ARN="${ACM_CERTIFICATE_ARN:-}"
+          if [ -z "$EFFECTIVE_ACM_CERTIFICATE_ARN" ]; then
+            BASE_DOMAIN="${APP_HOST#*.}"
+            CERT_JSON="$(aws acm list-certificates \
+              --region "$AWS_REGION" \
+              --certificate-statuses ISSUED \
+              --output json)"
+            EXACT_ARN="$(echo "$CERT_JSON" | jq -r --arg host "$APP_HOST" '.CertificateSummaryList // [] | map(select((.DomainName // "" | ascii_downcase) == ($host | ascii_downcase))) | .[0].CertificateArn // empty')"
+            WILDCARD_ARN="$(echo "$CERT_JSON" | jq -r --arg wildcard "*.${BASE_DOMAIN}" '.CertificateSummaryList // [] | map(select((.DomainName // "" | ascii_downcase) == ($wildcard | ascii_downcase))) | .[0].CertificateArn // empty')"
+            ROOT_ARN="$(echo "$CERT_JSON" | jq -r --arg root "$BASE_DOMAIN" '.CertificateSummaryList // [] | map(select((.DomainName // "" | ascii_downcase) == ($root | ascii_downcase))) | .[0].CertificateArn // empty')"
+            EFFECTIVE_ACM_CERTIFICATE_ARN="${EXACT_ARN:-${WILDCARD_ARN:-$ROOT_ARN}}"
+            if [ -n "$EFFECTIVE_ACM_CERTIFICATE_ARN" ]; then
+              echo "Auto-mapped ACM certificate: $EFFECTIVE_ACM_CERTIFICATE_ARN"
+            fi
+          fi
+
+          if [ -n "$EFFECTIVE_ACM_CERTIFICATE_ARN" ]; then
             cat > "$MANIFEST_DIR/ingress.yaml" <<YAML
           apiVersion: networking.k8s.io/v1
           kind: Ingress
@@ -208,7 +224,7 @@ jobs:
             annotations:
               alb.ingress.kubernetes.io/scheme: internet-facing
               alb.ingress.kubernetes.io/target-type: ip
-              alb.ingress.kubernetes.io/certificate-arn: $ACM_CERTIFICATE_ARN
+              alb.ingress.kubernetes.io/certificate-arn: $EFFECTIVE_ACM_CERTIFICATE_ARN
               alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
               alb.ingress.kubernetes.io/ssl-redirect: '443'
           spec:
@@ -253,7 +269,7 @@ jobs:
                 secretName: $APP_NAME-tls
           YAML
           else
-            echo "ACM_CERTIFICATE_ARN is required for non-hub clusters. Hub cluster can omit it (cert-manager fallback)."
+            echo "No ACM certificate mapped for host $APP_HOST. Provide ACM_CERTIFICATE_ARN or ensure ISSUED cert exists for exact/wildcard domain."
             exit 1
           fi
 
