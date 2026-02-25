@@ -34,8 +34,8 @@ jobs:
 
       - name: Build and run SonarQube analysis
         env:
-          SONAR_TOKEN: {% raw %}${{ secrets.SONAR_TOKEN_HUB }}{% endraw %}
-          SONAR_HOST_URL: {% raw %}${{ secrets.SONAR_HOST_URL_HUB }}{% endraw %}
+          SONAR_TOKEN: {% raw %}${{ secrets.SONAR_TOKEN }}{% endraw %}
+          SONAR_HOST_URL: {% raw %}${{ secrets.SONAR_HOST_URL }}{% endraw %}
         run: |
           mvn clean verify sonar:sonar \
             -Dsonar.projectKey=${{ values.projectName }} \
