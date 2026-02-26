@@ -5,30 +5,30 @@ metadata:
     sesac.io/template-icon: golang
     sesac.io/template-color: "#14B8A6"
     sesac.io/template-stack: Go
-  description: Adds a Go application with AWS resources
+  description: AWS 리소스가 포함된 Go 애플리케이션을 생성합니다
   name: app-with-aws-resources
-  title: Add a Go App with AWS resources
+  title: Go 앱에 AWS 리소스 추가
 spec:
   owner: guests
   type: service
   parameters:
     - properties:
         name:
-          title: Application Name
+          title: 애플리케이션 이름
           type: string
-          description: Unique name of the component
+          description: 컴포넌트의 고유 이름
           ui:autofocus: true
         labels:
-          title: Labels
+          title: 레이블
           type: object
           additionalProperties:
             type: string
-          description: Labels to apply to the application
+          description: 애플리케이션에 적용할 레이블
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
-          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account. GitHub Apps only work with Organizations.'
+          description: '중요: 개인 계정이 아닌 GitHub Organization 이름(예: SAMJOYAP)을 입력하세요. GitHub Apps는 Organization에서만 작동합니다.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -38,31 +38,31 @@ spec:
       required:
         - name
         - repoUrl
-      title: Choose your repository location
-    - description: Configure your bucket
+      title: 저장소 위치 선택
+    - description: 버킷을 구성합니다
       properties:
         apiVersion:
           default: awsblueprints.io/v1alpha1
-          description: APIVersion for the resource
+          description: 리소스의 APIVersion
           type: string
         kind:
           default: ObjectStorage
-          description: Kind for the resource
+          description: 리소스의 Kind
           type: string
         config:
-          description: ObjectStorageSpec defines the desired state of ObjectStorage
+          description: ObjectStorageSpec은 ObjectStorage의 원하는 상태를 정의합니다
           properties:
             writeConnectionSecretToRef:
-              description: Name of the secret to store connection details
+              description: 연결 세부 정보를 저장할 시크릿 이름
               properties:
                 name:
                   type: string
                   default: connection-secret
             resourceConfig:
-              description: ResourceConfig defines general properties of this AWS resource.
+              description: ResourceConfig는 이 AWS 리소스의 일반 속성을 정의합니다.
               properties:
                 deletionPolicy:
-                  description: Defaults to Delete
+                  description: 기본값은 Delete입니다
                   enum:
                     - Delete
                     - Orphan
@@ -81,16 +81,16 @@ spec:
               type: object
           required:
             - resourceConfig
-          title: Bucket configuration options
+          title: 버킷 구성 옵션
           type: object
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -110,26 +110,26 @@ spec:
           metadata:
             name: ${{ parameters.name }}
           spec: ${{ parameters.config }}
-      name: serialize
+      name: YAML 직렬화
     - action: roadiehq:utils:fs:write
       id: write
       input:
         content: ${{ steps['serialize'].output.serialized }}
         path: kustomize/base/${{ parameters.name }}.yaml
-      name: write-to-file
+      name: 파일에 쓰기
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
     - id: create-argocd-app
-      name: Create ArgoCD App
+      name: ArgoCD App 생성
       action: cnoe:create-argocd-app
       input:
         appName: ${{parameters.name}}
@@ -139,13 +139,13 @@ spec:
         repoUrl: ${{ steps['create-repo'].output.remoteUrl }}
         path: "kustomize/base"
     - id: register
-      name: Register
+      name: Catalog 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
         catalogInfoPath: '/catalog-info.yaml'
   output:
     links:
-      - title: Open in catalog
+      - title: Catalog에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}

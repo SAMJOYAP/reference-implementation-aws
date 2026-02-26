@@ -5,26 +5,26 @@ metadata:
     sesac.io/template-icon: workflow
     sesac.io/template-color: "#F97316"
     sesac.io/template-stack: Argo Workflows
-  description: Creates a Basic Kubernetes Deployment
+  description: Spark Job이 포함된 기본 Argo Workflow를 생성합니다
   name: argo-workflows-basic
-  title: Basic Argo Workflow with a Spark Job
+  title: Spark Job을 포함한 기본 Argo Workflow
 spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options
+    - title: 구성 옵션
       required:
         - name
         - repoUrl
       properties:
         name:
           type: string
-          description: name of this application
+          description: 애플리케이션 이름
           ui:autofocus: true
         repoUrl:
-          title: Repository Location
+          title: 저장소 위치
           type: string
-          description: 'IMPORTANT: Use your GitHub Organization name (e.g., SAMJOYAP), not personal account. GitHub Apps only work with Organizations.'
+          description: '중요: 개인 계정이 아닌 GitHub Organization 이름(예: SAMJOYAP)을 입력하세요. GitHub Apps는 Organization에서만 작동합니다.'
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
@@ -34,18 +34,18 @@ spec:
         mainApplicationFile:
           type: string
           default: 'local:///opt/spark/examples/jars/spark-examples_2.12-3.1.3.jar'
-          description: Path to the main application file
+          description: 메인 애플리케이션 파일 경로
 
   steps:
     - id: create-repo
-      name: Create Repository
+      name: 저장소 생성
       action: github:repo:create
       input:
         repoUrl: ${{ parameters.repoUrl }}
         description: This is an Argo Workflow with Spark Job
 
     - id: template
-      name: Generating component
+      name: 컴포넌트 생성
       action: fetch:template
       input:
         url: ./skeleton
@@ -55,20 +55,20 @@ spec:
           remoteUrl: ${{ steps['create-repo'].output.remoteUrl }}
 
     - id: init-repo
-      name: Initialize Repository
+      name: 저장소 초기화
       action: github:repo:push
       input:
         repoUrl: ${{ parameters.repoUrl }}
         defaultBranch: main
 
     - id: wait
-      name: Waiting for the repo to be ready
+      name: 저장소 준비 대기
       action: "roadiehq:utils:sleep"
       input:
         amount: 5
 
     - id: create-argocd-app
-      name: Create ArgoCD App
+      name: ArgoCD App 생성
       action: cnoe:create-argocd-app
       input:
         appName: ${{parameters.name}}
@@ -79,7 +79,7 @@ spec:
         path: "manifests"
 
     - id: register
-      name: Register
+      name: Catalog 등록
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['init-repo'].output.repoContentsUrl }}
@@ -87,6 +87,6 @@ spec:
 
   output:
     links:
-      - title: Open in catalog
+      - title: Catalog에서 열기
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
