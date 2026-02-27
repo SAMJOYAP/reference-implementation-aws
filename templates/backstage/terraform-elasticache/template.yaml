@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#DC2626"
     sesac.io/template-stack: ElastiCache
   name: terraform-elasticache
-  title: Terraform으로 ElastiCache Redis 생성
+  title: ElastiCache Redis 생성
   description: 클러스터 모드, Multi-AZ, TLS/AUTH, 스냅샷, CloudWatch 알람 옵션을 포함한 ElastiCache Redis 클러스터를 생성합니다
   tags:
     - terraform

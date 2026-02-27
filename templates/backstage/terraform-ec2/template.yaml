@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#F59E0B"
     sesac.io/template-stack: EC2
   name: terraform-ec2
-  title: Terraform으로 EC2 인스턴스 생성
+  title: EC2 인스턴스 생성
   description: Terraform과 GitHub Actions를 사용하여 EC2 인스턴스를 생성합니다
   tags:
     - terraform

@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#7C3AED"
     sesac.io/template-stack: DynamoDB
   name: terraform-dynamodb
-  title: Terraform으로 DynamoDB 테이블 생성
+  title: DynamoDB 테이블 생성
   description: GSI, TTL, PITR, 스트림, Auto Scaling, KMS 암호화 옵션을 포함한 DynamoDB 테이블을 생성합니다
   tags:
     - terraform

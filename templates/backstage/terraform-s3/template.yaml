@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#0284C7"
     sesac.io/template-stack: S3
   name: terraform-s3
-  title: Terraform으로 S3 버킷 생성
+  title: S3 버킷 생성
   description: 버전 관리, KMS 암호화, 수명 주기 규칙, 액세스 로깅, 정적 웹 사이트 호스팅 옵션을 포함한 S3 버킷을 생성합니다
   tags:
     - terraform

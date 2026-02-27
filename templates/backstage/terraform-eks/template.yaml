@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#0EA5E9"
     sesac.io/template-stack: EKS
   name: terraform-eks
-  title: Terraform으로 EKS 클러스터 생성
+  title: EKS 클러스터 생성
   description: VPC (퍼블릭/프라이빗 서브넷, NAT GW), 관리형 노드 그룹, 핵심 애드온 (EBS CSI, VPC CNI, CoreDNS, kube-proxy), AWS Load Balancer Controller 및 Fluent Bit용 IRSA 역할을 포함한 EKS 클러스터를 생성합니다
   tags:
     - terraform

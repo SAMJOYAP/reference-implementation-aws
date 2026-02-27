@@ -6,7 +6,7 @@ metadata:
     sesac.io/template-color: "#2563EB"
     sesac.io/template-stack: RDS
   name: terraform-rds
-  title: Terraform으로 RDS 데이터베이스 생성
+  title: RDS 데이터베이스 생성
   description: Multi-AZ, Performance Insights, CloudWatch Logs, Secrets Manager 연동을 포함한 RDS 인스턴스 (PostgreSQL/MySQL/Aurora)를 생성합니다
   tags:
     - terraform
