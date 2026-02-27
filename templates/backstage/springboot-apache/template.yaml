@@ -5,7 +5,7 @@ metadata:
     sesac.io/template-icon: java
     sesac.io/template-color: "#EA6A47"
     sesac.io/template-stack: Java
-  name: springboot-gradle-apache
+  name: springboot-apache
   title: Java 웹 앱 (Apache + Spring Boot)
   description: Apache로 서비스되는 Java 웹 프로젝트를 생성하며, Spring Boot 설정과 선택형 Ingress를 함께 구성합니다.
   tags:

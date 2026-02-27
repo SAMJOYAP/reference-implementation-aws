@@ -243,7 +243,7 @@ CD 업데이트 대상:
 3. 가능하면 전역 refresh endpoint(`POST /api/catalog/refresh`)도 호출
 4. 템플릿 엔티티 smoke check 실행
    - `template/default/nodejs-nginx-webapp`
-   - `template/default/springboot-gradle-apache`
+   - `template/default/springboot-apache`
 
 필수 GitHub 설정:
 - Repository Variables

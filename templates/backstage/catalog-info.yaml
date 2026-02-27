@@ -5,10 +5,6 @@ metadata:
   description: A collection of example templates
 spec:
   targets:
-    - ./basic/template.yaml
-    - ./argo-workflows/template.yaml
-    - ./app-with-bucket/template.yaml
-    - ./ray-serve/template-ray-serve.yaml
     - ./terraform-ec2/template.yaml
     - ./nodejs-nginx/template.yaml
     - ./springboot-apache/template.yaml
